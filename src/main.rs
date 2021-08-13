@@ -1,3 +1,9 @@
+use std::env::args;
+
 fn main() {
-    println!("Hello, world!");
+
+    let miner_address: String = args().nth(1).unwrap();
+    
+    println!("miner_address: {:?}", miner_address);
+
 }
