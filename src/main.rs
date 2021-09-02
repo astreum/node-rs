@@ -23,7 +23,7 @@ fn main() -> std::io::Result<()> {
       .v   v.      v.     v     .v  v.   .v      .v   v.  .v   v.      v.
       .v   v.  .vvv.      v     .v   v.  .vvvv.   .vvv.    .vvv.   .vvv.   .v.
 
-   Astreuos Miner
+   Astreuos Node
 
    version 0.1.0
 
