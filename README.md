@@ -35,7 +35,7 @@ show account [account]        View account information
 new address [account]         Get a new address for a transaction
 show address [address]        View address information
 
-new transaction [address]     Create, sign and transmit a new transaction
+new transaction [address]     Craft, sign and transmit a new transaction
 show transaction [tx_hash]    View transaction information
 
 sync                          Get the latest blocks and transform astreuos state

@@ -6,6 +6,7 @@ mod library;
 mod mining;
 mod addresses;
 mod accounts;
+mod network;
 
 fn main() -> std::io::Result<()> {
    
@@ -42,16 +43,16 @@ fn main() -> std::io::Result<()> {
       new transaction [address]     Create, sign and transmit a new transaction
       show transaction [tx_hash]    View transaction information
 
-      sync                          Get the latest blocks and transform astreuos state
+      sync                          Get the latest blocks and transform accounts
       mine                          Start mining new blocks
-
+      
    "###;
 
    print!("{}", startup_art);
 
    let args: Vec<String> = env::args().collect();
 
-   if args.is_empty() {
+   if args.len() < 2 {
 
       print!(r###"
       

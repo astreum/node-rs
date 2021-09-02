@@ -1,8 +1,9 @@
 
-use std::error::Error;
-
 use crate::addresses;
-
+use crate::network;
+use std::thread;
+use std::sync::mpsc;
+use std::error::Error;
 use stellar_notation::value_get;
 
 pub fn start() -> Result<(), Box<dyn Error>> {
@@ -29,6 +30,23 @@ pub fn start() -> Result<(), Box<dyn Error>> {
     Mining Address: {}
             "###, mining_address);
 
+            sync()?;
+
+            // get latest block
+
+            // start listening for new blocks
+
+            let (sender, receiver) = mpsc::channel();
+
+            thread::spawn(move || network::listener(sender).unwrap());
+
+            for received in receiver {
+
+                // if block number == next block
+                    // validate block
+
+                // if block number > 
+            }
 
         },
 
@@ -42,5 +60,9 @@ pub fn start() -> Result<(), Box<dyn Error>> {
 
     }
 
+    Ok(())
+}
+
+pub fn sync() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
