@@ -4,13 +4,38 @@ use crate::network;
 use std::thread;
 use std::sync::mpsc;
 use std::error::Error;
-use stellar_notation::value_get;
+use stellar_notation::{
+    StellarObject,
+    StellarValue,
+    byte_decode,
+    list_get,
+    value_get
+};
+
+struct Block {
+    number: u64
+}
+
+impl Block {
+
+    fn from_bytes(bytes: Vec<u8>) -> Block {
+
+        let block_objects: Vec<StellarObject> = byte_decode::list(&bytes);
+
+        let mut block: Block = Block {
+            number: list_get::as_uint64(block_objects, "number").unwrap()
+        };
+
+        return block;
+
+    }
+}
 
 pub fn start() -> Result<(), Box<dyn Error>> {
 
     print!(r###"
 
-    Mining started ...
+    Minting started ...
     "###);
 
     let mut store = neutrondb::store("app")?;
@@ -27,7 +52,7 @@ pub fn start() -> Result<(), Box<dyn Error>> {
 
             print!(r###"
 
-    Mining Address: {}
+    Minting Address: {}
             "###, mining_address);
 
             sync()?;
@@ -42,10 +67,22 @@ pub fn start() -> Result<(), Box<dyn Error>> {
 
             for received in receiver {
 
-                // if block number == next block
-                    // validate block
+                let decoded_message: StellarObject = byte_decode::object(&received)?;
 
-                // if block number > 
+                match &decoded_message.0[..] {
+                    "new_block" => {
+
+                        match decoded_message.1 {
+                            StellarValue::Bytes(_) => {
+
+                            },
+                            _ => ()
+                        }
+
+                    },
+                    "new_transaction" => (),
+                    _ => ()
+                }
             }
 
         },
