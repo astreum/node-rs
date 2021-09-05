@@ -1,6 +1,9 @@
 
+pub mod vm;
+
 use crate::addresses;
 use crate::network;
+
 use std::thread;
 use std::sync::mpsc;
 use std::error::Error;
@@ -11,25 +14,6 @@ use stellar_notation::{
     list_get,
     value_get
 };
-
-struct Block {
-    number: u64
-}
-
-impl Block {
-
-    fn from_bytes(bytes: Vec<u8>) -> Block {
-
-        let block_objects: Vec<StellarObject> = byte_decode::list(&bytes);
-
-        let mut block: Block = Block {
-            number: list_get::as_uint64(block_objects, "number").unwrap()
-        };
-
-        return block;
-
-    }
-}
 
 pub fn start() -> Result<(), Box<dyn Error>> {
 
