@@ -1,21 +1,21 @@
-# Astreuos Node
+# Astreuos Terminal
 
 ## Usage
 
 ```
 
 Usage:
-    rust-astreuos [command] [argument]
+    astreuos-terminal [command] [argument]
 
 ```
 
 ## Startup
 ```
 
-*      .       *    .               *     .    *          *
-    .        .           *    .     *  .            .
-        *   .      *           *               * .       *    .   .
-    .                     *    .    * .            .
+    *      .       *    .               *     .    *          *
+     .        .           *    .     *  .            .
+         *   .      *           *               * .       *    .   .
+     .                     *    .    * .            .
 
      .vvv.    .vvv.  .vvvvv.  .vvvv.   .vvvv.  .v   v.   .vvv.    .vvv.
     .v   v.  .v         v     .v   v.  .v      .v   v.  .v   v.  .v
@@ -23,9 +23,9 @@ Usage:
     .v   v.      v.     v     .v  v.   .v      .v   v.  .v   v.      v.
     .v   v.  .vvv.      v     .v   v.  .vvvv.   .vvv.    .vvv.   .vvv.   .v.
 
-Astreuos Node
+   Astreuos Terminal
 
-version 0.1.0
+   version 0.1.0
 
 ```
 
@@ -33,22 +33,50 @@ version 0.1.0
 ```
 
 Commands:
-    create wallet                 Generates a seed phrase and master key
-    recover wallet                Recover a wallet through a seed phrase
-    remove wallet                 Remove master key (Recover through seed phrase)
-    show wallet                   View wallet information
+
+    Wallet ...........................................................................
+
+    create wallet                 generates a seed phrase and master key
+    recover wallet                recover a wallet through a seed phrase
+    remove wallet                 remove master key
+    show wallet                   view wallet information
     
-    accounts                      View all accounts
-    new account                   Create a new account
-    show account [account]        View account information
+    Accounts .........................................................................
+
+    accounts                      view all accounts
+    new account                   create a new account
+    show account [account]        view account information
+
+    Address ..........................................................................
         
-    new address [account]         Get a new address for a transaction
-    show address [address]        View address information
+    new address [account]         get a new address for a transaction
+    show address [address]        view address information
 
-    new transaction [account]     Craft, sign and send a new transaction
-    show transaction [tx_hash]    View transaction information
+    Transactions .....................................................................
 
-    sync                          Get the latest blocks and transform the astreuos state
-    mint                          Validate the blockchain by minting new blocks
+    new transaction [account]     craft, sign and send a new transaction
+    show transaction [tx_hash]    view transaction information
+    cancel transaction [tx_hash]  remove a transaction from the tx pool
+
+    Blockchain .......................................................................
+
+    sync                          get the latest blocks
+    mint                          validate the blockchain by minting new blocks
+
+    Nova .............................................................................
+
+    stake                         add quanta to the treasury and start minting
+    withdraw                      remove quanta from the treasury
+
+    pools                         view staking pools
+    add to pool                   add quanta into a staking pool  
+    withdraw from pool            remove quanta from a staking pool
+
+    Nebula ...........................................................................
+
+    get                           get an object
+    store                         store an object
+    
+    serve                         start file server
 
 ```

@@ -11,15 +11,13 @@ use std::num::NonZeroU32;
 
 use std::error::Error;
 
-use stellar_notation::{
-    StellarObject, StellarValue
-};
+use stellar_notation::{ encode };
 
 use crate::library::wordlist;
 
 pub fn create() -> Result<(), Box<dyn Error>> {
 
-    let mut store = neutrondb::store("app")?;
+    let mut store = neutrondb::Store::connect("app")?;
 
     let master_key_query = store.get("master_key")?;
 
@@ -71,7 +69,7 @@ pub fn create() -> Result<(), Box<dyn Error>> {
 
             print!(r###"
 
-    Generating Mnemonic ...
+    Generating Seed Phrase ...
             "###);
 
             let mnemonic_length: Vec<usize> = (0..24).collect();
@@ -110,13 +108,8 @@ pub fn create() -> Result<(), Box<dyn Error>> {
             let mnemonic_string: String = phrase.concat();
 
             let master_key = seed_to_master(mnemonic_string)?;
-
-            let master_key_object: StellarObject = StellarObject(
-                "master_key".to_string(),
-                StellarValue::Bytes(master_key)
-            );
         
-            store.put(master_key_object)?;
+            store.put("master_key", &encode::bytes(&master_key))?;
 
             Ok(())
 
@@ -135,7 +128,7 @@ pub fn remove() -> Result<(), Box<dyn Error>> {
     Removing Wallet ...
     "###);
 
-    let mut store = neutrondb::store("app")?;
+    let mut store = neutrondb::Store::connect("app")?;
 
     store.delete("master_key")?;
 

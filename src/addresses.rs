@@ -17,8 +17,8 @@ pub fn get(master_key: Vec<u8>, levels: Vec<u32>) -> String {
 
     let address_priv = &address_key.0[0..32];
 
-    // Generate a key pair in PKCS#8 (v2) format.
     let rng = rand::SystemRandom::new();
+    
     let pkcs8_bytes = signature::Ed25519KeyPair::generate_pkcs8(&rng).unwrap();
 
     let key_pair = signature::Ed25519KeyPair::from_pkcs8(pkcs8_bytes.as_ref()).unwrap();

@@ -1,24 +1,57 @@
 
 use std::sync::mpsc;
-use std::net::UdpSocket;
 use std::error::Error;
+use std::thread;
+use std::net::UdpSocket;
 
-pub fn listener(sender: mpsc::Sender<Vec<u8>>) -> Result<(), Box<dyn Error>> {
+use neutrondb::store;
 
-    loop {
+pub struct Network {
+    pub routes: Vec<(String, String)>,
+    pub receiver: mpsc::Receiver<Vec<u8>>,
+}
 
-        let mut socket = UdpSocket::bind("127.0.0.1:34254")?;
+impl Network {
 
-        let mut buf = [0; 10];
+    pub fn new() -> Result<Network, Box<dyn Error>> {
 
-        let (amt, src) = socket.recv_from(&mut buf)?;
+        let (sender, receiver) = mpsc::channel();
 
-        sender.send(buf.to_vec())?;
+        let mut network = Network { 
+            receiver: receiver,
+            routes: vec![]
+        };
+
+        let routes_store = store("routes")?;
+
+        let routes = routes_store.get_all()?;
+
+        match routes {
+
+            Some(res) => network.routes = res,
+
+            None => network.routes = vec![("node_id".to_string(), "node_add".to_string())]
+
+        }
+
+        thread::spawn(move || {
+            
+            loop {
+
+                let socket = UdpSocket::bind("127.0.0.1:44444").unwrap();
+        
+                let mut buf = [0; 3];
+        
+                let (amt, src) = socket.recv_from(&mut buf).unwrap();
+        
+                sender.send(buf.to_vec()).unwrap();
+        
+            }
+            
+        });
+
+        Ok(network)
 
     }
 
 }
-
-// pub fn send() {}
-
-// pub fn ping() {}

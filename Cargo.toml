@@ -1,13 +1,13 @@
 [package]
-name = "astreuos-node"
+name = "rust-astreuos"
 version = "0.1.0"
 edition = "2018"
 
 [dependencies]
 # stellar-notation = "0.9.6"
 # neutrondb = "0.9.8"
-neutrondb = { path = "../neutrondb-rs" }
-stellar-notation = { path = "../stellar-notation-rs" }
+neutrondb = { path = "../rust-neutrondb" }
+stellar-notation = { path = "../rust-stellar-notation" }
 rand = "0.8.4"
 sha3 = "0.9.1"
 ring = "0.16.20"

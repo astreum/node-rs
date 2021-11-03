@@ -1,28 +1,24 @@
 
-pub mod vm;
-
 use crate::addresses;
-use crate::network;
+use crate::network::Network;
+use std::time::Duration;
 
-use std::thread;
-use std::sync::mpsc;
 use std::error::Error;
+use std::thread;
+use std::net::UdpSocket;
+
 use stellar_notation::{
-    StellarObject,
-    StellarValue,
-    byte_decode,
-    list_get,
-    value_get
+    value_decode
 };
 
-pub fn start() -> Result<(), Box<dyn Error>> {
+pub fn run() -> Result<(), Box<dyn Error>> {
 
     print!(r###"
 
     Minting started ...
     "###);
 
-    let mut store = neutrondb::store("app")?;
+    let store = neutrondb::store("app")?;
 
     let master_key_query = store.get("master_key")?;
 
@@ -30,7 +26,7 @@ pub fn start() -> Result<(), Box<dyn Error>> {
         
         Some(res) => {
 
-            let master_key: Vec<u8> = value_get::as_bytes(res)?;
+            let master_key: Vec<u8> = value_decode::as_bytes(&res)?;
 
             let mining_address = addresses::get(master_key, vec![0,0]);
 
@@ -39,35 +35,19 @@ pub fn start() -> Result<(), Box<dyn Error>> {
     Minting Address: {}
             "###, mining_address);
 
-            sync()?;
+    //         // syncronize with the network
 
-            // get latest block
+            let network = Network::new()?;
 
-            // start listening for new blocks
-
-            let (sender, receiver) = mpsc::channel();
-
-            thread::spawn(move || network::listener(sender).unwrap());
-
-            for received in receiver {
-
-                let decoded_message: StellarObject = byte_decode::object(&received)?;
-
-                match &decoded_message.0[..] {
-                    "new_block" => {
-
-                        match decoded_message.1 {
-                            StellarValue::Bytes(_) => {
-
-                            },
-                            _ => ()
-                        }
-
-                    },
-                    "new_transaction" => (),
-                    _ => ()
+            thread::spawn(move || {
+                
+                for received in network.receiver {
+                    println!("Got: {:?}", received);
                 }
-            }
+                
+            });
+
+            let socket = UdpSocket::bind("127.0.0.1:34254").unwrap();
 
         },
 
@@ -81,9 +61,5 @@ pub fn start() -> Result<(), Box<dyn Error>> {
 
     }
 
-    Ok(())
-}
-
-pub fn sync() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
