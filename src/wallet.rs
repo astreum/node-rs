@@ -2,48 +2,36 @@
 extern crate rand;
 
 use rand::RngCore;
+
 use rand::rngs::OsRng;
 
 use sha3::{Digest, Sha3_256};
 
 use ring::{digest, pbkdf2};
+
 use std::num::NonZeroU32;
 
 use std::error::Error;
 
-use stellar_notation::{ encode };
-
 use crate::library::wordlist;
 
-pub fn create() -> Result<(), Box<dyn Error>> {
+use neutrondb::Store;
 
-    let mut store = neutrondb::Store::connect("app")?;
+use stellar_notation::encode;
 
-    let master_key_query = store.get("master_key")?;
+pub fn create() {
+
+    let mut store = Store::connect("app").unwrap();
+
+    let master_key_query = store.get("master_key").unwrap();
 
     match master_key_query {
-        
-        Some(_) => {
-
-            print!(r###"
-
-    Wallet already created!
-            "###);
-            
-            Ok(())
-        },
-
+        Some(_) => println!("Wallet ready!"),
         None => {
 
-            print!(r###"
+            println!("Creating wallet ...");
 
-    Creating Wallet ...
-            "###);
-
-            print!(r###"
-
-    Generating Entropy ...
-            "###);
+            println!("Generating entropy ...");
 
             let mut entropy = vec![0u8; 32];
 
@@ -67,10 +55,7 @@ pub fn create() -> Result<(), Box<dyn Error>> {
 
             }
 
-            print!(r###"
-
-    Generating Seed Phrase ...
-            "###);
+            println!("Generating seed phrase ...");
 
             let mnemonic_length: Vec<usize> = (0..24).collect();
 
@@ -88,13 +73,13 @@ pub fn create() -> Result<(), Box<dyn Error>> {
             let mnemonic_art = format!(
                 r###"
 
-        {}  {}  {}  {}  {}  {}
+                {}  {}  {}  {}  {}  {}
 
-        {}  {}  {}  {}  {}  {}
+                {}  {}  {}  {}  {}  {}
 
-        {}  {}  {}  {}  {}  {}
+                {}  {}  {}  {}  {}  {}
 
-        {}  {}  {}  {}  {}  {}
+                {}  {}  {}  {}  {}  {}
 
                 "###,
                 phrase[0], phrase[1], phrase[2], phrase[3], phrase[4], phrase[5],
@@ -107,42 +92,33 @@ pub fn create() -> Result<(), Box<dyn Error>> {
 
             let mnemonic_string: String = phrase.concat();
 
-            let master_key = seed_to_master(mnemonic_string)?;
-        
-            store.put("master_key", &encode::bytes(&master_key))?;
+            let master_key = seed_to_master(mnemonic_string).unwrap();
 
-            Ok(())
+            store.put("master_key", &encode::bytes(&master_key)).unwrap();
+            
+            println!("Wallet ready!")
 
         }
-    
+
     }
 
 }
 
-// pub fn recover() {}
+pub fn recover(phrase: Vec<String>) {
 
-pub fn remove() -> Result<(), Box<dyn Error>> {
+    let mut store = Store::connect("app").unwrap();
 
-    print!(r###"
+    let mnemonic_string: String = phrase.concat();
 
-    Removing Wallet ...
-    "###);
+    let master_key = seed_to_master(mnemonic_string).unwrap();
 
-    let mut store = neutrondb::Store::connect("app")?;
+    store.put("master_key", &encode::bytes(&master_key)).unwrap();
+    
+    println!("Wallet ready!")
 
-    store.delete("master_key")?;
-
-    print!(r###"
-
-    Removed!
-    "###);
-
-    Ok(())
 }
 
-// pub fn show() {}
-
-pub fn seed_to_master(seed: String) -> Result<Vec<u8>, Box<dyn Error>> {
+fn seed_to_master(seed: String) -> Result<Vec<u8>, Box<dyn Error>> {
 
     let salt = "mnemonic";
 

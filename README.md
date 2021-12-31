@@ -23,9 +23,9 @@ Usage:
     .v   v.      v.     v     .v  v.   .v      .v   v.  .v   v.      v.
     .v   v.  .vvv.      v     .v   v.  .vvvv.   .vvv.    .vvv.   .vvv.   .v.
 
-   Astreuos Terminal
+    Astreuos Terminal
 
-   version 0.1.0
+    version 0.1.0
 
 ```
 
@@ -69,8 +69,6 @@ Commands:
     withdraw                      remove quanta from the treasury
 
     pools                         view staking pools
-    add to pool                   add quanta into a staking pool  
-    withdraw from pool            remove quanta from a staking pool
 
     Nebula ...........................................................................
 
@@ -80,3 +78,5 @@ Commands:
     serve                         start file server
 
 ```
+
+2021-11-03
