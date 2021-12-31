@@ -1,15 +1,16 @@
-# Astreuos Terminal
+# Astreuos Node
 
 ## Usage
 
 ```
 
 Usage:
-    astreuos-terminal [command] [argument]
+    rust-astreuos [command] [argument]
 
 ```
 
-## Startup
+## Header
+
 ```
 
     *      .       *    .               *     .    *          *
@@ -23,60 +24,23 @@ Usage:
     .v   v.      v.     v     .v  v.   .v      .v   v.  .v   v.      v.
     .v   v.  .vvv.      v     .v   v.  .vvvv.   .vvv.    .vvv.   .vvv.   .v.
 
-    Astreuos Terminal
+    Astreuos Node
 
     version 0.1.0
 
 ```
 
 ## Help
+
 ```
 
 Commands:
 
-    Wallet ...........................................................................
+    Wallet ...................................................................
 
-    create wallet                 generates a seed phrase and master key
-    recover wallet                recover a wallet through a seed phrase
-    remove wallet                 remove master key
-    show wallet                   view wallet information
-    
-    Accounts .........................................................................
-
-    accounts                      view all accounts
-    new account                   create a new account
-    show account [account]        view account information
-
-    Address ..........................................................................
-        
-    new address [account]         get a new address for a transaction
-    show address [address]        view address information
-
-    Transactions .....................................................................
-
-    new transaction [account]     craft, sign and send a new transaction
-    show transaction [tx_hash]    view transaction information
-    cancel transaction [tx_hash]  remove a transaction from the tx pool
-
-    Blockchain .......................................................................
-
-    sync                          get the latest blocks
-    mint                          validate the blockchain by minting new blocks
-
-    Nova .............................................................................
-
-    stake                         add quanta to the treasury and start minting
-    withdraw                      remove quanta from the treasury
-
-    pools                         view staking pools
-
-    Nebula ...........................................................................
-
-    get                           get an object
-    store                         store an object
-    
-    serve                         start file server
+    wallet create                              generates your master key
+    wallet recover [24-word phrase]            recover through a seed phrase
 
 ```
 
-2021-11-03
+2021-12-31

@@ -73,13 +73,13 @@ pub fn create() {
             let mnemonic_art = format!(
                 r###"
 
-                {}  {}  {}  {}  {}  {}
+    {}  {}  {}  {}  {}  {}
 
-                {}  {}  {}  {}  {}  {}
+    {}  {}  {}  {}  {}  {}
 
-                {}  {}  {}  {}  {}  {}
+    {}  {}  {}  {}  {}  {}
 
-                {}  {}  {}  {}  {}  {}
+    {}  {}  {}  {}  {}  {}
 
                 "###,
                 phrase[0], phrase[1], phrase[2], phrase[3], phrase[4], phrase[5],
@@ -88,9 +88,11 @@ pub fn create() {
                 phrase[18], phrase[19], phrase[20], phrase[21], phrase[22], phrase[23]
             );
 
-            print!("{}", mnemonic_art);
+            println!("{}", mnemonic_art);
 
             let mnemonic_string: String = phrase.concat();
+
+            println!("Generating master key ...");
 
             let master_key = seed_to_master(mnemonic_string).unwrap();
 
