@@ -65,14 +65,15 @@ fn help() {
   
       Transactions .........................................................................................
   
-      tx new [pass] [receipient] [amount] [solar price] [solar limit]        create, sign & send tx message
-      tx cancel [pass] [tx hash]                                             send cancel tx message
+      tx new [password] [receipient] [amount] [solar limit] [solar price]    create, sign & send tx message
+      tx cancel [password] [tx hash]                                         send cancel tx message
   
       Nova ............................................................................................
   
       nv add [amount]                                                        add to stake balance
       nv stake                                                               check stake balance
-  
+      nv mint [password]                                                     create new blocks
+    
  
    "###)
 
