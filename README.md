@@ -5,7 +5,7 @@
 ```
 
 Usage:
-    rust-astreuos [command] [argument]
+    rust-astreuos [command] [arguments]
 
 ```
 
@@ -16,7 +16,7 @@ Usage:
     *      .       *    .               *     .    *          *
      .        .           *    .     *  .            .
          *   .      *           *               * .       *    .   .
-     .                     *    .    * .            .
+     .                     *    .    * .            .         .   .   .
 
      .vvv.    .vvv.  .vvvvv.  .vvvv.   .vvvv.  .v   v.   .vvv.    .vvv.
     .v   v.  .v         v     .v   v.  .v      .v   v.  .v   v.  .v
@@ -26,7 +26,7 @@ Usage:
 
     Astreuos Node
 
-    version 0.1.0
+    version 0.2.0
 
 ```
 
@@ -36,11 +36,23 @@ Usage:
 
 Commands:
 
-    Wallet ...................................................................
+    Wallet ..........................................................................................
 
-    wallet create                              generates your master key
-    wallet recover [24-word phrase]            recover through a seed phrase
+    wt create [password]                                            generates your private key
+    wt private                                                      view encrypted private key
+    wt public                                                       view public key
+    wt recover [encrypted private key] [password]                   recover a wallet
+
+    Transactions ....................................................................................
+
+    tx new [receipient] [amount] [solar price] [solar limit]        create, sign & send tx message
+    tx cancel [tx hash]                                             send cancel tx message
+
+    Nova ............................................................................................
+
+    nv add [amount]                                                 add to stake balance
+    nv stake                                                        check stake balance
 
 ```
 
-2021-12-31
+2022-02-19

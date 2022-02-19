@@ -1,12 +1,12 @@
 [package]
-name = "astreuos-terminal"
-version = "0.1.0"
+name = "rust-astreuos"
+version = "0.2.0"
 edition = "2018"
 
 [dependencies]
-stellar-notation = "0.9.18"
-neutrondb = "0.9.19"
+astro-notation = "3.1.0"
+neutrondb = "2.2.0"
 rand = "0.8.4"
 sha3 = "0.9.1"
 ring = "0.16.20"
-# secp256k1 = "0.20.3"
+fides = "0.4.0"
