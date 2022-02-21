@@ -36,24 +36,24 @@ Usage:
 
 Commands:
 
-    Wallet ..........................................................................................
+    Wallet ................................................................................................
 
-    wt create [password]                                                   generates your private key
+    wt create [password] [repeat password]                                 generates your private key
     wt private                                                             view encrypted private key
     wt public                                                              view public key
     wt recover [encrypted private key] [password]                          recover a wallet
 
-    Transactions .........................................................................................
+    Transactions ..........................................................................................
 
     tx new [password] [receipient] [amount] [solar limit] [solar price]    create, sign & send tx message
     tx cancel [password] [tx hash]                                         send cancel tx message
 
-    Nova ............................................................................................
+    Nova ..................................................................................................
 
     nv add [amount]                                                        add to stake balance
     nv stake                                                               check stake balance
-    nv mint [password]                                                     create new blocks
+    nv validate [password]                                                 create new blocks
   
 ```
 
-2022-02-19
+2022-02-21
