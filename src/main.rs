@@ -1,5 +1,6 @@
 
 use std::env;
+// mod validate;
 mod wallet;
 
 fn main() {
@@ -15,10 +16,15 @@ fn main() {
    let main_arg: &str = &format!("{} {}", &args[1], &args[2]);
 
    match main_arg {
-      "wt create" => wallet::create(&args[3]),
+      "wt create" => wallet::create(&args[3], &args[4]),
       "wt private" => wallet::private(),
-      "wt public" => wallet::public(),
+      "wt address" => wallet::address(),
       "wt recover" => wallet::recover(&args[3], &args[4]),
+      "tx new" => (),
+      "tx cancel" => (),
+      "nv add" => (),
+      "nv stake" => (),
+      // "nv validate" => validate::blocks(&args[3], format!("{} {}", &args[4], &args[5])),    
       _ => help()
    }
 
@@ -39,9 +45,9 @@ fn header() {
    .v   v.      v.     v     .v  v.   .v      .v   v.  .v   v.      v.
    .v   v.  .vvv.      v     .v   v.  .vvvv.   .vvv.    .vvv.   .vvv.   .v.
 
-   Astreuos Node
+   Rust Astreuos
 
-   version 0.2.0
+   version 1.0.0
    
    "###)
    
@@ -58,10 +64,10 @@ fn help() {
 
       Wallet ................................................................................................
   
-      wt create [password] [repeat password]                                 generates your private key
-      wt private                                                             view encrypted private key
-      wt public                                                              view public key
-      wt recover [encrypted private key] [password]                          recover a wallet
+      wt create [password] [repeat password]                                 generates your key and address
+      wt key                                                                 view encrypted key
+      wt address                                                             view address
+      wt recover [encrypted key] [password]                                  recover your wallet
   
       Transactions ..........................................................................................
   
@@ -72,7 +78,7 @@ fn help() {
   
       nv add [amount]                                                        add to stake balance
       nv stake                                                               check stake balance
-      nv validate [password]                                                 create new blocks
+      nv validate [chain] [password]                                                 create new blocks
     
  
    "###)

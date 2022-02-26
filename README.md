@@ -1,17 +1,3 @@
-# Astreuos Node
-
-## Usage
-
-```
-
-Usage:
-    rust-astreuos [command] [arguments]
-
-```
-
-## Header
-
-```
 
     *      .       *    .               *     .    *          *
      .        .           *    .     *  .            .
@@ -24,11 +10,20 @@ Usage:
     .v   v.      v.     v     .v  v.   .v      .v   v.  .v   v.      v.
     .v   v.  .vvv.      v     .v   v.  .vvvv.   .vvv.    .vvv.   .vvv.   .v.
 
-    Astreuos Node
+    Rust Astreuos
 
-    version 0.2.0
+    version 1.0.0
 
-```
+This is the Official Node for the Astreuos Blockchain.
+
+## Features
+
+- Key Management
+- Transactions
+- Blockchain Validation
+
+## Usage
+
 
 ## Help
 
@@ -36,23 +31,23 @@ Usage:
 
 Commands:
 
-    Wallet ................................................................................................
+    Wallet .............................................................................................................
 
-    wt create [password] [repeat password]                                 generates your private key
-    wt private                                                             view encrypted private key
-    wt public                                                              view public key
-    wt recover [encrypted private key] [password]                          recover a wallet
+    wt create [password] [repeat password]                                           generates your key and address
+    wt key                                                                           view encrypted key
+    wt address                                                                       view address
+    wt recover [encrypted key] [password]                                            recover your wallet
 
-    Transactions ..........................................................................................
+    Transactions ........................................................................................................
 
-    tx new [password] [receipient] [amount] [solar limit] [solar price]    create, sign & send tx message
-    tx cancel [password] [tx hash]                                         send cancel tx message
+    tx new [password] [network] [receipient] [amount] [solar limit] [solar price]    create, sign & broadcast tx message
+    tx cancel [password] [tx hash]                                                   send cancel tx message
 
-    Nova ..................................................................................................
+    Nova ................................................................................................................
 
-    nv add [amount]                                                        add to stake balance
-    nv stake                                                               check stake balance
-    nv validate [password]                                                 create new blocks
+    nv add [amount]                                                                  add to stake balance
+    nv stake                                                                         check stake balance
+    nv validate [password] [network]                                                 create new blocks
   
 ```
 
