@@ -49,7 +49,7 @@ pub fn create(password: &str, repeat: &str) {
 
 }
 
-pub fn private() {
+pub fn key() {
 
     let app_store = Store::connect("app");
 
@@ -58,8 +58,17 @@ pub fn private() {
     match priv_key_query {
         
         Some(r) => println!(r###"
-    ENCRYPTED PRIVATE KEY: {}
-        "###, r),
+    Encrypted Key:
+
+    {}
+        "###,
+        r.chars()
+            .collect::<Vec<char>>()
+            .chunks(2)
+            .map(|c| c.iter().collect::<String>())
+            .collect::<Vec<String>>()
+            .join(" ")
+        ),
 
         None => println!(r###"
     No wallet found! Please create one with:
@@ -79,14 +88,21 @@ pub fn address() {
     match priv_key_query {
         
         Some(r) => println!(r###"
-    address:
-    0x
+    Address:
+
     {}
-        "###, r),
+        "###,
+        r.chars()
+            .collect::<Vec<char>>()
+            .chunks(2)
+            .map(|c| c.iter().collect::<String>())
+            .collect::<Vec<String>>()
+            .join(" ")
+        ),
 
         None => println!(r###"
     No wallet found! Please create one with:
-        wt create password
+        wt create [password] [repeat password]
             "###)
 
     }

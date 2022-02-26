@@ -1,18 +1,18 @@
+# Rust Astreuos
 
-    *      .       *    .               *     .    *          *
-     .        .           *    .     *  .            .
-         *   .      *           *               * .       *    .   .
-     .                     *    .    * .            .         .   .   .
 
-     .vvv.    .vvv.  .vvvvv.  .vvvv.   .vvvv.  .v   v.   .vvv.    .vvv.
-    .v   v.  .v         v     .v   v.  .v      .v   v.  .v   v.  .v
-    .vvvvv.   .vv.      v     .vvvv.   .vvv.   .v   v.  .v   v.   .vv.
-    .v   v.      v.     v     .v  v.   .v      .v   v.  .v   v.      v.
-    .v   v.  .vvv.      v     .v   v.  .vvvv.   .vvv.    .vvv.   .vvv.   .v.
+.       *    .               *     .    *          *
+    .        .           *    .     *  .            .
+        *   .      *           *               * .       *    .   .
+    .                     *    .    * .            .         .   .   .
 
-    Rust Astreuos
+ .vvv.    .vvv.  .vvvvv.  .vvvv.   .vvvv.  .v   v.   .vvv.    .vvv.
+.v   v.  .v         v     .v   v.  .v      .v   v.  .v   v.  .v
+.vvvvv.   .vv.      v     .vvvv.   .vvv.   .v   v.  .v   v.   .vv.
+.v   v.      v.     v     .v  v.   .v      .v   v.  .v   v.      v.
+.v   v.  .vvv.      v     .v   v.  .vvvv.   .vvv.    .vvv.   .vvv.   .v.
 
-    version 1.0.0
+version 1.0.0
 
 This is the Official Node for the Astreuos Blockchain.
 
@@ -40,14 +40,14 @@ Commands:
 
     Transactions ........................................................................................................
 
-    tx new [password] [network] [receipient] [amount] [solar limit] [solar price]    create, sign & broadcast tx message
+    tx new [password] [chain] [receipient] [amount] [solar limit] [solar price]    create, sign & broadcast tx message
     tx cancel [password] [tx hash]                                                   send cancel tx message
 
     Nova ................................................................................................................
 
     nv add [amount]                                                                  add to stake balance
     nv stake                                                                         check stake balance
-    nv validate [password] [network]                                                 create new blocks
+    nv validate [password] [chain]                                                 create new blocks
   
 ```
 
