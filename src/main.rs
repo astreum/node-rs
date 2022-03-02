@@ -1,6 +1,10 @@
 
 use std::env;
-// mod validate;
+mod account;
+mod block;
+mod state;
+mod transaction;
+mod validate;
 mod wallet;
 
 fn main() {
@@ -24,7 +28,7 @@ fn main() {
       "tx cancel" => (),
       "nv add" => (),
       "nv stake" => (),
-      // "nv validate" => validate::blocks(&args[3], format!("{} {}", &args[4], &args[5])),    
+      "nv validate" => validate::blocks(&args[3], format!("{} {}", &args[4], &args[5])),    
       _ => help()
    }
 
@@ -52,30 +56,35 @@ fn header() {
 }
 
 fn help() {
-    println!(r###"
+   
+   println!(r###"
+   
+   Usage:
+      rust-astreuos [command] [arguments]
+
+   Commands:
+
+      Wallet ..........................................................................................................
+  
+      wt create [password] [repeat password]                                          generates your wallet
+      wt key                                                                          view encrypted key
+      wt address                                                                      view address
+      wt recover [encrypted key] [password]                                           recover your wallet
+  
+      Transactions ....................................................................................................
+  
+      tx new [password] [chain] [recipient] [amount] [slar limit] [solar price]       create and send a transaction
+      tx cancel [password] [tx hash]                                                  send cancel transaction message
+  
+      Nova ............................................................................................................
+  
+      nv add [amount]                                                                 add to stake balance
+      nv stake                                                                        check stake balance
+      nv validate [password] [chain]                                                  create new blocks
     
-    Usage:
-        rust-astreuos [command] [arguments]
-        
-    Commands:
-    
-        Wallet ........................................................................................................
-        
-        wt create [password] [repeat password]                                         generates your key and address
-        wt key                                                                         view encrypted key
-        wt address                                                                     view address
-        wt recover [encrypted key] [password]                                          recover your wallet
-        
-        Transactions ..................................................................................................
-        
-        tx new [password] [chain] [receipient] [amount] [solar limit] [solar price]    create, sign & send tx message
-        tx cancel [password] [tx hash]                                                 send cancel tx message
-        
-        Nova ..........................................................................................................
-        
-        nv add [amount]                                                                add to stake balance
-        nv stake                                                                       check stake balance
-        nv validate [password] [chain]                                                 create new blocks
-        
     "###)
+}
+
+fn merkle_tree_hash(_input: &Vec<[u8;32]>) -> [u8;32] {
+   [0_u8;32]
 }
