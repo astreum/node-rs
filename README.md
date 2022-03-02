@@ -33,23 +33,24 @@ This is the Official Node for the Astreuos Blockchain.
 
 Commands:
 
-    Wallet ..........................................................................................................
+    Accounts ...................................................................................................
 
-    wt create [password] [repeat password]                                          generates your wallet
-    wt key                                                                          view encrypted key
-    wt address                                                                      view address
-    wt recover [encrypted key] [password]                                           recover your wallet
+    account new [password]                                                          create a new account
+    account key                                                                     view encrypted key
+    account address                                                                 view address
+    account balance                                                                 view balance
+    account recover [encrypted key] [password]                                      recover your wallet
 
-    Transactions ....................................................................................................
+    Transactions ...............................................................................................
 
-    tx new [password] [chain] [recipient] [amount] [slar limit] [solar price]       create & send a transactions
-    tx cancel [password] [tx hash]                                                  send cancel tx message
+    tx new [password] [chain] [recipient] [amount] [solar limit] [solar price]       create & send a transaction
+    tx cancel [password] [tx hash]                                                   send cancel tx message
 
-    Nova ............................................................................................................
+    Nova .......................................................................................................
 
-    nv add [amount]                                                                 add to stake balance
-    nv stake                                                                        check stake balance
-    nv validate [password] [chain]                                                  create new blocks
+    nv add [password] [amount]                                                       add to stake
+    nv stake                                                                         view stake
+    nv validate [password] [chain]                                                   create new blocks
   
 ```
 
