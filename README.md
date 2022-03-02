@@ -1,5 +1,3 @@
-# Rust Astreuos
-
 ```
 
 .       *    .               *     .    *          *
@@ -13,6 +11,7 @@
 .v   v.      v.     v     .v  v.   .v      .v   v.  .v   v.      v.
 .v   v.  .vvv.      v     .v   v.  .vvvv.   .vvv.    .vvv.   .vvv.   .v.
 
+Rust Astreuos
 version 1.0.0
 
 ```
