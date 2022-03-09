@@ -2,52 +2,50 @@ use std::convert::TryInto;
 use astro_notation::{encode, decode};
 use fides::{hash, ed25519, chacha20poly1305};
 use neutrondb::Store;
+use crate::help;
 
-pub fn create(password: &str, repeat: &str) {
-
-    if password == repeat {
-
-        let mut app_store: Store = Store::connect("app");
-
-        let priv_key_query: Option<String> = app_store.get("priv_key");
-
-        match priv_key_query {
+pub fn new(password: &str) {
+    
+    let mut app_store: Store = Store::connect("app");
+    
+    match app_store.get("priv_key") {
             
-            Some(_) => println!("Wallet ready!"),
+        Some(_) => println!("Account ready!"),
+        
+        None => {
             
-            None => {
-
-                println!("Creating wallet ...");
+            let priv_key: [u8; 32] = ed25519::private_key();
+            
+            let pub_key: [u8; 32] = ed25519::public_key(&priv_key);
+            
+            let pass_key: [u8; 32] = hash(&password.as_bytes().to_vec());
+            
+            let encrypted_priv = chacha20poly1305::encrypt(&pass_key, &priv_key.to_vec());
+            
+            app_store.put("priv_key", &encode::bytes(&encrypted_priv));
+            
+            app_store.put("pub_key", &encode::bytes(&pub_key.to_vec()));
                 
-                let priv_key: [u8; 32] = ed25519::private_key();
+            println!(r###"
+Account ready!
 
-                let pub_key: [u8; 32] = ed25519::public_key(&priv_key);
-
-                let pass_key: [u8; 32] = hash(&password.as_bytes().to_vec());
-
-                let encrypted_priv = chacha20poly1305::encrypt(&pass_key, &priv_key.to_vec());
-
-                app_store.put("priv_key", &encode::bytes(&encrypted_priv));
-
-                app_store.put("pub_key", &encode::bytes(&pub_key.to_vec()));
-                
-                println!("Wallet ready!");
-
-            }
+Encrypted Key:
+{}
+{}
+    
+Address: {}
+            "###,
+            &encode::bytes(&encrypted_priv)[..61],
+            &encode::bytes(&encrypted_priv)[61..],
+            &encode::bytes(&pub_key.to_vec()))
 
         }
 
     }
 
-    else {
-
-        println!(r###"
-    Passwords do not match!
-        "###)
-
-    }
-
 }
+
+pub fn balance() {}
 
 pub fn key() {
 
@@ -58,22 +56,17 @@ pub fn key() {
     match priv_key_query {
         
         Some(r) => println!(r###"
-    Encrypted Key:
-
-    {}
+Encrypted Key:
+{}
+{}
         "###,
-        r.chars()
-            .collect::<Vec<char>>()
-            .chunks(2)
-            .map(|c| c.iter().collect::<String>())
-            .collect::<Vec<String>>()
-            .join(" ")
-        ),
+        r[..61].to_string(),
+        r[61..].to_string()),
 
-        None => println!(r###"
-    No wallet found! Please create one with:
-        wt create password
-            "###)
+        None => {
+            println!("Account not found!");
+            help()
+        }
 
     }
 
@@ -88,22 +81,13 @@ pub fn address() {
     match priv_key_query {
         
         Some(r) => println!(r###"
-    Address:
+Address: {}
+        "###, r),
 
-    {}
-        "###,
-        r.chars()
-            .collect::<Vec<char>>()
-            .chunks(2)
-            .map(|c| c.iter().collect::<String>())
-            .collect::<Vec<String>>()
-            .join(" ")
-        ),
-
-        None => println!(r###"
-    No wallet found! Please create one with:
-        wt create [password] [repeat password]
-            "###)
+        None => {
+            println!("Account not found!");
+            help()
+        }
 
     }
 
@@ -125,6 +109,6 @@ pub fn recover(cipher_text: &str, password: &str) {
 
     app_store.put("pub_key", &encode::bytes(&pub_key.to_vec()));
     
-    println!("Wallet ready!");
+    println!("Account ready!");
 
 }

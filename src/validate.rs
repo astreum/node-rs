@@ -1,163 +1,122 @@
-use neutrondb::Store;
-use pulsar_network::{Message, MessageKind, Network, Routes};
-use std::collections::HashMap;
-use std::str;
-use crate::block::Block;
 use crate::state::State;
-use crate::transaction::{CancelTransaction, Transaction};
-use astro_notation::{ encode, decode };
+use crate::NOVA_ADDRESS;
 use std::thread;
+use std::time::{ Instant, SystemTime };
+use std::sync::Arc;
+use fides::ed25519;
+use opis::Int;
 use std::convert::TryInto;
+use pulsar_network::{ Message, MessageKind };
+use crate::transform::accounts_hash;
+use crate::block::Block;
+use crate::account::Account;
+use std::collections::HashMap;
 
-pub fn blocks(password: &str, chain: u8) {
+impl State {
 
-    let mut app_store: Store = Store::connect("app");
+    pub fn validate(&self, private_key: [u8; 32]) {
 
-    let priv_key = app_store.get("priv_key").unwrap();
+        println!("astreuos: validating ...");
 
-    let pub_key = app_store.get("pub_key").unwrap();
+        let pub_key: [u8; 32] = ed25519::public_key(&private_key);
 
-    let mut blocks_store: Store = Store::connect("blocks");
+        let accounts_clone = Arc::clone(&self.accounts);
 
-    let all_blocks = blocks_store.get_all().unwrap();
+        let current_block_clone = Arc::clone(&self.current_block);
 
-    let blocks: Vec<Block> = all_blocks
-        .iter()
-        .map(|x| Block::from_bytes(&decode::as_bytes(&x.1)).unwrap())
-        .collect();
+        let pending_transactions_clone = Arc::clone(&self.pending_transactions);
 
-    let mut pending_transactions: HashMap<[u8; 32], Transaction>;
+        let network_clone = Arc::clone(&self.network);
 
-    let mut state: State = State::new(blocks, chain);
+        thread::spawn(move || {
 
-    let network_route: Routes = match chain {
-        1 => Routes::MainValidation,
-        2 => Routes::TestValidation
-    };
+            let mut now = Instant::now();
 
-    let network = Network::config(network_route);
+            loop {
 
-    let messages = network.connect();
+                if now.elapsed().as_secs() > 2 {
 
-    thread::spawn(move || {
-        
-        let mut current_validator: [u8; 32];
+                    let mut current_block = current_block_clone.lock().unwrap();
 
-        let private_key: [u8; 32] = decode::as_bytes(&priv_key).try_into().unwrap();
+                    let current_time: u64 = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs();
 
-        let public_key: [u8; 32] = decode::as_bytes(&pub_key).try_into().unwrap();
+                    if current_time - current_block.time > 3 {
 
-        loop {
+                        let mut accounts = accounts_clone.lock().unwrap();
 
-            if current_validator == public_key {
+                        let nova_account = accounts.get(&NOVA_ADDRESS).unwrap();
 
-            }
+                        let slot_store = &nova_account.storage.get(&2).unwrap();
 
-        }
+                        let mut slot_addresses: Vec<&Vec<u8>> = slot_store.iter().map(|x| x.0).collect();
 
-    });
+                        slot_addresses.sort_by(
+                            |a, b|
+                            (Int::from_bytes(&current_block.hash.to_vec()) ^ Int::from_bytes(a))
+                            .cmp(
+                                &(Int::from_bytes(&current_block.hash.to_vec()) ^ Int::from_bytes(b))
+                            ));
 
-    loop {
+                        let current_validator: [u8; 32] = slot_addresses[0].clone().try_into().unwrap();
 
-        for (message, peer) in messages {
+                        if current_validator == pub_key {
 
-            match message.kind {
-                
-                MessageKind::Block => {
+                            let solar_limit: Int = Int::from_decimal("1000000");
 
-                    match Block::from_bytes(&message.body) {
-                        
-                        Ok(block) => {
+                            // let mut pending_transactions = pending_transactions_clone.lock().unwrap();
 
-                            if block.previous_block_hash == state.current_block.hash() {
-                                
-                                match state.transform(block) {
+                            // for tx in &pending_transactions {
 
-                                    Ok(_) => {
+                            // }
 
-                                        blocks_store.put(&encode::bytes(&block.hash().to_vec()), &encode::bytes(&message.body))
+                            let mut validator = accounts.get(&pub_key).unwrap().clone();
+                            
+                            validator.balance += Int::from_decimal("1000000000000000000000000");
+                            
+                            accounts.insert(pub_key, validator);
 
-                                    },
-                                    _ => ()
-                                }
-                            }
-                        },
-                        _ => ()
-                    }
-                },
+                            let mut new_block: Block = Block {
+                                accounts_hash: accounts_hash(&accounts),
+                                chain: current_block.chain,
+                                hash: [0_u8; 32],
+                                number: current_block.number.clone() + Int::one(),
+                                previous_block_hash: current_block.hash,
+                                receipts_hash: [0_u8; 32],
+                                signature: [0_u8; 64],
+                                solar_price: current_block.clone().solar_price,
+                                solar_used: Int::from_decimal("1000000") - solar_limit,
+                                time: SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs(),
+                                transactions_hash: [0_u8; 32],
+                                transactions: Vec::new(),
+                                validator: pub_key
+                            };
 
-                MessageKind::CancelTransaction => {
+                            println!(" * new block hash: {:?}", new_block.hash());
 
-                    match CancelTransaction::from_bytes(&message.body) {
+                            new_block.hash = new_block.hash();
 
-                        Ok(cancel_transaction) => {
+                            new_block.signature = ed25519::sign(&new_block.hash, &private_key, &pub_key);
 
-                            match pending_transactions.get(&cancel_transaction.transaction_hash) {
+                            let new_block_message: Message = Message::new(MessageKind::Block, new_block.to_bytes());
 
-                                Some(tx) => {
-                                    
-                                    match cancel_transaction.verify(*tx) {
-                                        
-                                        true => {
-                                            pending_transactions.remove(&cancel_transaction.transaction_hash);
-                                            network.broadcast(message)
-                                        },
-                                        false => ()
-                                    }
-                                },
-                                _ => ()
-                            }
-                        },
-                        _ => ()
-                    }
+                            let network = network_clone.lock().unwrap();
 
-                },
+                            network.broadcast(new_block_message);
 
-                MessageKind::NextBlock => {
+                            drop(network);
+                            
+                            *current_block = new_block;
 
-                    match blocks_store.get(&encode::bytes(&message.body)) {
-                        Some(r) => {
-                            let message: Message = Message::new(decode::as_bytes(&r), MessageKind::Block);
-                            network.send(message, peer)
-                        },
-                        _ => ()
-                    }
-
-                },
-
-                MessageKind::Transaction => {
-                    
-                    match Transaction::from_bytes(&message.body) {
-
-                        Ok(tx) => {
-
-                            let tx_hash: [u8; 32] = tx.hash();
-
-                            match pending_transactions.get(&tx_hash) {
-            
-                                None => {
-
-                                    match state.is_tx_applicable(tx) {
-                                        true => {
-                                            pending_transactions.insert(tx_hash, tx);
-                                            network.broadcast(message)
-                                        },
-                                        false => ()
-                                    }
-                                },
-                                Some(_) => ()
-                            }
-                        },
-                        Err(_) => ()
+                        }
 
                     }
+
+                    now = Instant::now()
 
                 }
 
             }
-
-        } 
-
+            
+        });
     }
-
 }
