@@ -28,12 +28,12 @@ impl CancelTransaction {
         }
     }
 
-    pub fn to_bytes(self) -> Vec<u8> {
-        [
-            self.transaction_hash.to_vec(),
-            self.signature.to_vec()
-        ].concat()
-    }
+    // pub fn to_bytes(self) -> Vec<u8> {
+    //     [
+    //         self.transaction_hash.to_vec(),
+    //         self.signature.to_vec()
+    //     ].concat()
+    // }
 
     pub fn verify(self, tx: &Transaction) -> bool {
         ed25519::verify(&self.transaction_hash, &tx.sender, &self.signature)

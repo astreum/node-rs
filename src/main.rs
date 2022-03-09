@@ -181,8 +181,8 @@ fn merkle_tree_hash(mut hashes: Vec<[u8;32]>) -> [u8; 32] {
            if intermediate.len() == 2 {
                
                cache.push(hash(&[
-                   hashes[0].to_vec(),
-                   hashes[1].to_vec()
+                  intermediate[0].to_vec(),
+                  intermediate[1].to_vec()
                ].concat()));
 
                intermediate.clear()

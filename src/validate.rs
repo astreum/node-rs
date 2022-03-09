@@ -9,8 +9,8 @@ use std::convert::TryInto;
 use pulsar_network::{ Message, MessageKind };
 use crate::transform::accounts_hash;
 use crate::block::Block;
-use crate::account::Account;
-use std::collections::HashMap;
+// use crate::account::Account;
+// use std::collections::HashMap;
 
 impl State {
 
@@ -24,7 +24,7 @@ impl State {
 
         let current_block_clone = Arc::clone(&self.current_block);
 
-        let pending_transactions_clone = Arc::clone(&self.pending_transactions);
+        // let pending_transactions_clone = Arc::clone(&self.pending_transactions);
 
         let network_clone = Arc::clone(&self.network);
 

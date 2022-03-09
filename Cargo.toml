@@ -10,7 +10,5 @@ rand = "0.8.4"
 sha3 = "0.9.1"
 ring = "0.16.20"
 fides = "2.0.0"
-# pulsar-network = "0.4.7"
-
-pulsar-network = { path = "../rust-pulsar-network" }
+pulsar-network = "0.5.1"
 opis = "3.0.1"

@@ -15,7 +15,6 @@ pub struct State {
     pub accounts_store: Store,
     pub blocks_store: Arc<Mutex<Store>>,
     pub current_block: Arc<Mutex<Block>>,
-    pub nova_storage: HashMap<[u8; 32], (usize, [u8; 32])>,
     pub pending_transactions: Arc<Mutex<HashMap<[u8; 32], Transaction>>>,
     pub network: Arc<Mutex<Network>>
 }
@@ -67,7 +66,6 @@ impl State {
             accounts_store: Store::connect("accounts"),
             blocks_store: Arc::new(Mutex::new(Store::connect(&format!("blocks_{}", &chain)))),
             current_block: Arc::new(Mutex::new(Block::genesis(block_chain))),
-            nova_storage: HashMap::new(),
             pending_transactions: Arc::new(Mutex::new(HashMap::new())),
             network: Arc::new(Mutex::new(network))
         };

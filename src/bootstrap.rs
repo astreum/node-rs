@@ -4,7 +4,6 @@ use crate::block::Block;
 use crate::state::State;
 use crate::transaction::{ CancelTransaction, Transaction };
 use crate::transform::apply_block;
-use opis::Int;
 use pulsar_network::{ Message, MessageKind };
 use std::sync::Arc;
 use std::thread;
@@ -13,7 +12,7 @@ impl State {
 
     pub fn bootstrap(&self) {
 
-        println!("astreuos: syncing ...");
+        println!("astreuos: bootstrapping ...");
 
         let accounts_clone = Arc::clone(&self.accounts);
 
@@ -26,20 +25,10 @@ impl State {
         let current_block_clone = Arc::clone(&self.current_block);
 
         thread::spawn(move || {
-
-            let current_block = current_block_clone.lock().unwrap();
-
-            let next_block_number = current_block.number.clone() + Int::one();
-
-            drop(current_block);
-
-            let next_block_message: Message = Message::new(MessageKind::NextBlock, next_block_number.to_ext_bytes(32));
             
             let network = network_clone.lock().unwrap();
-            
-            network.broadcast(next_block_message);
 
-            let messages = network.listen();
+            let messages = network.bootstrap();
 
             drop(network);
 
