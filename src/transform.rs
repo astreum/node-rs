@@ -1,11 +1,17 @@
-use crate::account::Account;
+
+use crate::account::{Account, accounts_hash};
 use crate::block::Block;
 use crate::merkle_tree_hash;
+use crate::NOVA_ADDRESS;
+use crate::NOVA_SLOTS_STORE_ID;
+use crate::NOVA_STAKE_STORE_ID;
+use crate::slots;
 use crate::transaction::Transaction;
 use fides::hash;
 use opis::Int;
 use std::collections::HashMap;
 use std::error::Error;
+use std::convert::TryInto;
 
 #[derive(Clone, Debug)]
 pub enum Status {
@@ -16,16 +22,16 @@ pub enum Status {
 
 #[derive(Clone, Debug)]
 pub struct Receipt {
-    solar_used: Int,
+    solar_used: u32,
     status: Status
 }
 
 impl Receipt {
     pub fn hash(self) -> [u8; 32] {
         match self.status {
-            Status::Accepted => merkle_tree_hash(vec![hash(&self.solar_used.to_ext_bytes(32)), hash(&vec![1_u8])]),
-            Status::BalanceError => merkle_tree_hash(vec![hash(&self.solar_used.to_ext_bytes(32)), hash(&vec![2_u8])]),
-            Status::SolarError => merkle_tree_hash(vec![hash(&self.solar_used.to_ext_bytes(32)), hash(&vec![3_u8])])
+            Status::Accepted => merkle_tree_hash(vec![hash(&self.solar_used.to_be_bytes().to_vec()), hash(&vec![1_u8])]),
+            Status::BalanceError => merkle_tree_hash(vec![hash(&self.solar_used.to_be_bytes().to_vec()), hash(&vec![2_u8])]),
+            Status::SolarError => merkle_tree_hash(vec![hash(&self.solar_used.to_be_bytes().to_vec()), hash(&vec![3_u8])])
         }
     }
 }
@@ -34,7 +40,7 @@ pub fn is_applicable(accounts: &HashMap<[u8; 32], Account>, tx: &Transaction, so
 
     if &tx.solar_price >= solar_price {
 
-        if tx.solar_limit >= Int::from_decimal("1000") {
+        if tx.solar_limit >= 1000 {
 
             match accounts.get(&tx.sender) {
 
@@ -63,163 +69,207 @@ pub fn is_applicable(accounts: &HashMap<[u8; 32], Account>, tx: &Transaction, so
     }
 }
 
-pub fn apply_block(mut accounts: HashMap<[u8; 32], Account>, block: Block) -> Result<HashMap<[u8; 32], Account>, Box<dyn Error>> {
+pub fn apply_block(
+    mut accounts: HashMap<[u8; 32], Account>,
+    new_block: Block,
+    latest_block: Block
+)
+-> Result<HashMap<[u8; 32], Account>, Box<dyn Error>> {
 
-    let mut receipts: Vec<Receipt> = Vec::new();
+    let mut nova_account = accounts.get(&NOVA_ADDRESS).unwrap().clone();
 
-    for tx in &block.transactions {
+    let slots_in_epoch: Int = Int::from_decimal("201600");
 
-        if is_applicable(&accounts, tx, &block.solar_price) {
+    if &new_block.number % &slots_in_epoch == Int::zero() {
 
-            let mut sender = accounts.get(&tx.sender).unwrap().clone();
+        let nova_stake_store = nova_account.storage.get(&NOVA_STAKE_STORE_ID).unwrap();
 
-            let mut solar_cost: Int = Int::from_decimal("1000");
+        let total_stake = nova_stake_store.iter().fold(Int::zero(), |acc, x| acc + Int::from_bytes(&x.1.to_vec()));
 
-            let tx_fee: Int =  &solar_cost * &block.solar_price;
+        let mut new_nova_stake_store: HashMap<[u8; 32], [u8; 32]> = HashMap::new();
 
-            sender.balance -= tx_fee;
+        for (key, value) in nova_stake_store {
 
-            match accounts.get(&tx.recipient) {
+            let x_slots = &(&Int::from_bytes(&value.to_vec()) / &total_stake) * &slots_in_epoch;
 
-                Some(r) => {
+            new_nova_stake_store.insert(*key, x_slots.to_ext_bytes(32).try_into().unwrap());
 
-                    if sender.balance >= tx.value {
+        }
 
-                        sender.balance -= tx.value.clone();
+        nova_account.storage.insert(NOVA_SLOTS_STORE_ID, new_nova_stake_store).unwrap();
 
-                        let mut recipient = r.clone();
+    }
 
-                        recipient.balance += tx.value.clone();
+    let nova_slots_store = nova_account.storage.get(&NOVA_SLOTS_STORE_ID).unwrap();
 
-                        let receipt = Receipt { solar_used: solar_cost, status: Status::Accepted };
+    let time_diff = new_block.time - latest_block.time;
+    
+    let slots_missed: u64 = if time_diff > 3 {
+        (time_diff - 1) / 3
+    } else {
+        0
+    };
+    
+    let (current_validator, new_nova_slots_store) = &slots::current_validator(nova_slots_store, slots_missed, latest_block.hash);
+    
+    if current_validator == &new_block.validator {
+        
+        let mut receipts: Vec<Receipt> = Vec::new();
 
-                        accounts.insert(tx.sender, sender);
+        for tx in &new_block.transactions {
 
-                        accounts.insert(tx.recipient, recipient.clone());
+            if is_applicable(&accounts, tx, &new_block.solar_price) {
 
-                        receipts.push(receipt)
-                        
-                    } else {
+                let mut solar_used: u32 = 0;
 
-                        accounts.insert(tx.sender, sender);
+                let mut sender = accounts.get(&tx.sender).unwrap().clone();
 
-                        let receipt = Receipt { solar_used: solar_cost, status: Status::BalanceError };
+                let tx_fee: Int =  &Int::from_decimal("1000") * &new_block.solar_price;
 
-                        receipts.push(receipt)
+                sender.balance -= tx_fee;
 
-                    }
-                },
+                solar_used += 1000;
 
-                None => {
+                match accounts.get(&tx.recipient) {
 
-                    let account_cost = Int::from_decimal("1000");
-                    
-                    if tx.solar_limit >= Int::from_decimal("2000") {
+                    Some(r) => {
 
-                        let account_fee: Int = &account_cost * &block.solar_price;
-                        
-                        if sender.balance >= account_fee {
+                        if sender.balance >= tx.value {
 
-                            solar_cost += account_cost;
+                            sender.balance -= tx.value.clone();
 
-                            sender.balance -= account_fee;
-                        
-                            if sender.balance >= tx.value {
-                                
-                                sender.balance -= tx.value.clone();
+                            let mut recipient = r.clone();
 
-                                let recipient = Account {
-                                    balance: tx.value.clone(),
-                                    counter: Int::zero(),
-                                    index: accounts.len(),
-                                    storage: HashMap::new()
-                                };
+                            recipient.balance += tx.value.clone();
 
-                                accounts.insert(tx.sender, sender);
+                            let receipt = Receipt { solar_used: solar_used, status: Status::Accepted };
 
-                                accounts.insert(tx.recipient, recipient);
+                            accounts.insert(tx.sender, sender);
 
-                                let receipt = Receipt { solar_used: solar_cost, status: Status::Accepted };
+                            accounts.insert(tx.recipient, recipient.clone());
 
-                                receipts.push(receipt)
-
-                            } else {
-
-                                accounts.insert(tx.sender, sender);
-                                
-                                let receipt = Receipt { solar_used: solar_cost, status: Status::BalanceError };
-
-                                receipts.push(receipt)
-
-                            }
-
+                            receipts.push(receipt)
+                            
                         } else {
 
                             accounts.insert(tx.sender, sender);
 
-                            let receipt = Receipt { solar_used: solar_cost, status: Status::BalanceError };
-                            
+                            let receipt = Receipt { solar_used: solar_used, status: Status::BalanceError };
+
                             receipts.push(receipt)
 
                         }
+                    },
 
-                    }  else {
+                    None => {
+                        
+                        if tx.solar_limit >= 2000 {
 
-                        accounts.insert(tx.sender, sender);
+                            let account_fee: Int = &Int::from_decimal("1000") * &new_block.solar_price;
+                            
+                            if sender.balance >= account_fee {
 
-                        let receipt = Receipt { solar_used: solar_cost, status: Status::SolarError };
+                                solar_used += 1000;
 
-                        receipts.push(receipt)
+                                sender.balance -= account_fee;
+                            
+                                if sender.balance >= tx.value {
+                                    
+                                    sender.balance -= tx.value.clone();
 
-                    } 
+                                    let recipient = Account::new(&tx.value);
+
+                                    accounts.insert(tx.sender, sender);
+
+                                    accounts.insert(tx.recipient, recipient);
+
+                                    let receipt = Receipt { solar_used: solar_used, status: Status::Accepted };
+
+                                    receipts.push(receipt)
+
+                                } else {
+
+                                    accounts.insert(tx.sender, sender);
+                                    
+                                    let receipt = Receipt { solar_used: solar_used, status: Status::BalanceError };
+
+                                    receipts.push(receipt)
+
+                                }
+
+                            } else {
+
+                                accounts.insert(tx.sender, sender);
+
+                                let receipt = Receipt { solar_used: solar_used, status: Status::BalanceError };
+                                
+                                receipts.push(receipt)
+
+                            }
+
+                        }  else {
+
+                            accounts.insert(tx.sender, sender);
+
+                            let receipt = Receipt { solar_used: solar_used, status: Status::SolarError };
+
+                            receipts.push(receipt)
+
+                        } 
+                    }
                 }
+            } else {
+                break
             }
-        } else {
-            break
+
         }
 
-    }
+        if receipts.len() == new_block.transactions.len() {
 
-    if receipts.len() == block.transactions.len() {
+            let receipts_hash: [u8; 32] = merkle_tree_hash(receipts
+                .iter()
+                .map(| x | x.clone().hash() )
+                .collect()
+            );
 
-        let receipts_hash: [u8; 32] = merkle_tree_hash(receipts
-            .iter()
-            .map(| x | x.clone().hash() )
-            .collect()
-        );
+            let solar_used: u32 = receipts
+                .iter()
+                .fold(0, | acc, x | acc + x.solar_used );
 
-        let solar_used: Int = receipts
-            .iter()
-            .fold( Int::zero(), | acc, x | acc + x.solar_used.clone() );
+            let mut validator = accounts.get(&new_block.validator).unwrap().clone();
 
-        let mut validator = accounts.get(&block.validator).unwrap().clone();
+            validator.balance += Int::from_decimal("1000000000000000000000000");
 
-        validator.balance += Int::one();
+            accounts.insert(new_block.validator, validator);
+        
+            nova_account.storage.insert(NOVA_SLOTS_STORE_ID, new_nova_slots_store.clone());
 
-        accounts.insert(block.validator, validator);
+            nova_account.storage_hash = nova_account.storage_hash();
 
-        let checks: Vec<bool> = vec![
-            accounts_hash(&accounts) == block.accounts_hash,
-            solar_used == block.solar_used,
-            receipts_hash == block.receipts_hash
-        ];
+            nova_account.hash = nova_account.hash();
 
-        if checks.iter().any(|&x| x == false) {
+            accounts.insert(NOVA_ADDRESS, nova_account);
 
-            Err("State and Block do not match!")?
+            let checks: Vec<bool> = vec![
+                accounts_hash(&accounts) == new_block.accounts_hash,
+                solar_used == new_block.solar_used,
+                receipts_hash == new_block.receipts_hash
+            ];
 
+            if checks.iter().any(|&x| x == false) {
+                println!("State and Block do not match!");
+                Err("State and Block do not match!")?
+            } else {
+                Ok(accounts)
+            }
         } else {
-            Ok(accounts)
+            println!("Some transactions could not be applied!");
+            Err("Some transactions could not be applied!")?
         }
 
     } else {
-
-        Err("Some transactions could not be applied!")?
-
+        println!("Validator not selected!");
+        Err("Validator not selected!")?
     }
 
-}
-
-pub fn accounts_hash(_accounts: &HashMap<[u8; 32], Account>) -> [u8; 32] {
-    [0_u8; 32]
 }

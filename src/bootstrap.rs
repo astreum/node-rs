@@ -30,13 +30,13 @@ impl State {
 
             let messages = network.bootstrap();
 
-            drop(network);
-
             for (message, peer) in &messages {
 
                 match message.kind {
                     
                     MessageKind::Block => {
+
+                        println!("astreuos: block received from {} ...", peer.address);
     
                         match Block::from_bytes(&message.body) {
                             
@@ -48,7 +48,7 @@ impl State {
 
                                     let mut accounts = accounts_clone.lock().unwrap();
                                         
-                                    match apply_block(accounts.clone(), block.clone()) {
+                                    match apply_block(accounts.clone(), block.clone(), current_block.clone()) {
     
                                         Ok(new_accounts) => {
 

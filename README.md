@@ -20,12 +20,13 @@ This is the Official Node for the Astreuos Blockchain.
 
 ## Features
 
-- Account Management
-- Transactions
-- Blockchain Validation
-
-## Usage
-
+- wallet creation
+- wallet recovery
+- view all and single address accounts
+- create and send transactions
+- send cancel transaction message
+- view all and single address stakes
+- blockchain validation
 
 ## Help
 
@@ -33,24 +34,29 @@ This is the Official Node for the Astreuos Blockchain.
 
 Commands:
 
+    Wallet ...................................................................................................
+
+    wallet new [password]                                                          create a new wallet
+    wallet key                                                                     view encrypted key
+    wallet address                                                                 view address
+    wallet recover [encrypted key] [password]                                      recover your wallet
+
     Accounts ...................................................................................................
 
-    account new [password]                                                          create a new account
-    account key                                                                     view encrypted key
-    account address                                                                 view address
-    account recover [encrypted key] [password]                                      recover your wallet
-    account search [address]                                                        search account
+    accounts all                                                                   view all accounts
+    accounts one [address]                                                         view one account
 
-    Transactions ...............................................................................................
+    Transaction ...............................................................................................
 
-    tx new [password] [chain] [recipient] [amount] [solar limit] [solar price]      create & send a transaction
-    tx cancel [password] [tx hash]                                                  send cancel tx message
+    tx new [password] [chain] [recipient] [amount] [solar limit] [solar price]     create & send a transaction
+    tx cancel [password] [tx hash]                                                 send cancel tx message
 
     Nova .......................................................................................................
 
-    nova stake [address]                                                            view stake
-    nova validate [password] [chain]                                                create new blocks
+    nova stakes                                                                    view all stakes
+    nova stake [address]                                                           view address stake
+    nova validate [password] [chain]                                               validate the blockchain
 
 ```
 
-2022-03-02
+2022-03-17

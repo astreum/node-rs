@@ -1,6 +1,7 @@
 mod account;
 mod block;
 mod bootstrap;
+mod slots;
 mod state;
 mod sync;
 mod transaction;
@@ -15,6 +16,8 @@ use fides::{ hash, chacha20poly1305 };
 use std::convert::TryInto;
 
 const NOVA_ADDRESS: [u8; 32] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 110, 111, 118, 97];
+const NOVA_STAKE_STORE_ID: [u8; 32] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 110, 111, 118, 97];
+const NOVA_SLOTS_STORE_ID: [u8; 32] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 110, 111, 118, 97];
 const FIRST_ADDRESS: [u8; 32] = [174, 0, 137, 41, 53, 190, 116, 104, 223, 140, 157, 66, 71, 7, 92, 205, 3, 187, 103, 166, 148, 21, 127, 172, 150, 249, 144, 128, 60, 212, 48, 235];
 
 fn main() {
@@ -27,34 +30,22 @@ fn main() {
       args.push(arg)
    }
 
-   if args.len() > 1 {
+   if args.len() > 3 {
 
-      let main_arg: &str = &format!("{} {}", &args[1], &args[2]);
+      let command: &str = format!("{} {}", args[1], args[2]);
 
-      match main_arg {
-         "account new" => {
-            if args.len() == 4 {   
-               wallet::new(&args[3]);
-            } else {
-               println!("Please provide a password ...");
-               help()
-            }
-         },
-         "account key" => wallet::key(),
-         "account address" => wallet::address(),
-         "account balance" => wallet::balance(),
-         "account recover" => {
-            if args.len() == 5 {   
-               wallet::recover(&args[3], &args[4]);
-            } else {
-               println!("Please provide an encrypted key & password ...");
-               help()
-            }
-         },
+      match command {
+
+         "wallet create" => wallet::create(args),
+         "wallet key" => wallet::key(),
+         "wallet address" => wallet::address(),
+         "wallet recover" => wallet::recover(args),
+         "accounts all" => (),
+         "accounts one" => (),
          "tx new" => (),
          "tx cancel" => (),
-         "nv add" => (),
-         "nv stake" => (),
+         "nova stakes" => (),
+         "nova stake" => (),
          "nova validate" => {
             
             if args.len() == 5 {
@@ -141,60 +132,71 @@ fn help() {
    
    println!(r###"
 
-Commands:
+   Commands:
 
-   Accounts ...................................................................................................
+      Wallet ...................................................................................................
 
-   account new [password]                                                          create a new account
-   account key                                                                     view encrypted key
-   account address                                                                 view address
-   account recover [encrypted key] [password]                                      recover your wallet
-   account search [address]                                                        search account
+      wallet new [password]                                                          create a new wallet
+      wallet key                                                                     view encrypted key
+      wallet address                                                                 view address
+      wallet recover [encrypted key] [password]                                      recover your wallet
 
-   Transactions ...............................................................................................
+      Accounts ...................................................................................................
 
-   tx new [password] [chain] [recipient] [amount] [solar limit] [solar price]      create & send a transaction
-   tx cancel [password] [tx hash]                                                  send cancel tx message
+      accounts all                                                                   view all accounts
+      accounts one [address]                                                         view one account
 
-   Nova .......................................................................................................
+      Transaction ...............................................................................................
 
-   nova stake [address]                                                            view stake
-   nova validate [password] [chain]                                                create new blocks
+      tx new [password] [chain] [recipient] [amount] [solar limit] [solar price]     create & send a transaction
+      tx cancel [password] [tx hash]                                                 send cancel tx message
+
+      Nova .......................................................................................................
+
+      nova stakes                                                                    view all stakes
+      nova stake [address]                                                           view address stake
+      nova validate [password] [chain]                                               validate the blockchain
     
     "###)
 }
 
 fn merkle_tree_hash(mut hashes: Vec<[u8;32]>) -> [u8; 32] {
 
-   if hashes.len() % 2 != 0 { hashes.push([0_u8; 32]) };
+   if hashes.len() == 0 {
+      [0_u8; 32]
+   } else {
 
-   while hashes.len() > 1 {
+      if hashes.len() % 2 != 0 { hashes.push([0_u8; 32]) };
 
-       let mut cache: Vec<[u8; 32]> = Vec::new();
+      while hashes.len() > 1 {
 
-       let mut intermediate: Vec<[u8; 32]> = Vec::new();
+         let mut cache: Vec<[u8; 32]> = Vec::new();
 
-       for h in &hashes {
-           
-           intermediate.push(*h);
-           
-           if intermediate.len() == 2 {
-               
-               cache.push(hash(&[
-                  intermediate[0].to_vec(),
-                  intermediate[1].to_vec()
-               ].concat()));
+         let mut intermediate: Vec<[u8; 32]> = Vec::new();
 
-               intermediate.clear()
+         for h in &hashes {
+            
+            intermediate.push(*h);
+            
+            if intermediate.len() == 2 {
+                  
+                  cache.push(hash(&[
+                     intermediate[0].to_vec(),
+                     intermediate[1].to_vec()
+                  ].concat()));
 
-           }
+                  intermediate.clear()
 
-       }
+            }
 
-       hashes = cache
-   
-   };
+         }
 
-   hashes[0]
+         hashes = cache
+      
+      };
+
+      hashes[0]
+
+   }
 
 }

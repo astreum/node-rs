@@ -47,10 +47,14 @@ impl State {
                 match message.kind {
                     
                     MessageKind::Block => {
+
+                        println!("astreuos: block received from {} ...", peer.address);
     
                         match Block::from_bytes(&message.body) {
                             
                             Ok(block) => {
+
+                                println!("block: {:?}", block);
 
                                 let current_block = current_block_clone.lock().unwrap();
                                 
@@ -58,7 +62,7 @@ impl State {
 
                                     let mut accounts = accounts_clone.lock().unwrap();
                                         
-                                    match apply_block(accounts.clone(), block.clone()) {
+                                    match apply_block(accounts.clone(), block.clone(), current_block.clone()) {
     
                                         Ok(new_accounts) => {
 
@@ -78,6 +82,8 @@ impl State {
                     },
 
                     MessageKind::CancelTransaction => {
+
+                        println!("astreuos: transaction cancellation received from {} ...", peer.address);
     
                         match CancelTransaction::from_bytes(&message.body) {
     
@@ -115,6 +121,8 @@ impl State {
 
                     MessageKind::NextBlock => {
 
+                        println!("astreuos: next block request from {} ...", peer.address);
+
                         let blocks_store = blocks_store_clone.lock().unwrap();
     
                         match blocks_store.get(&encode::bytes(&message.body)) {
@@ -136,6 +144,8 @@ impl State {
                     },
     
                     MessageKind::Transaction => {
+
+                        println!("astreuos: transaction received from {} ...", peer.address);
                         
                         match Transaction::from_bytes(&message.body) {
     
