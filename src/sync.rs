@@ -16,21 +16,23 @@ impl State {
 
         let accounts_clone = Arc::clone(&self.accounts);
 
+        let accounts_store_clone = Arc::clone(&self.accounts_store);
+
         let blocks_store_clone = Arc::clone(&self.blocks_store);
 
         let pending_transactions_clone = Arc::clone(&self.pending_transactions);
 
         let network_clone = Arc::clone(&self.network);
 
-        let current_block_clone = Arc::clone(&self.current_block);
+        let latest_block_clone = Arc::clone(&self.latest_block);
 
         thread::spawn(move || {
 
-            let current_block = current_block_clone.lock().unwrap();
+            let latest_block = latest_block_clone.lock().unwrap();
 
-            let next_block_number = current_block.number.clone() + Int::one();
+            let next_block_number = &latest_block.number + &Int::one();
 
-            drop(current_block);
+            drop(latest_block);
 
             let next_block_message: Message = Message::new(MessageKind::NextBlock, next_block_number.to_ext_bytes(32));
             
@@ -54,19 +56,25 @@ impl State {
                             
                             Ok(block) => {
 
-                                println!("block: {:?}", block);
-
-                                let current_block = current_block_clone.lock().unwrap();
+                                let latest_block = latest_block_clone.lock().unwrap();
                                 
-                                if block.previous_block_hash == current_block.hash {
+                                if block.previous_block_hash == latest_block.hash {
 
                                     let mut accounts = accounts_clone.lock().unwrap();
                                         
-                                    match apply_block(accounts.clone(), block.clone(), current_block.clone()) {
+                                    match apply_block(&mut accounts, block.clone(), latest_block.clone()) {
     
-                                        Ok(new_accounts) => {
+                                        Ok(updated_addresses) => {
 
-                                            *accounts = new_accounts;
+                                            let mut accounts_store = accounts_store_clone.lock().unwrap();
+
+                                            for address in updated_addresses {
+
+                                                let account = accounts.get(&address).unwrap();
+
+                                                accounts_store.put(&encode::bytes(&address.to_vec()), &account.to_astro())
+
+                                            }
 
                                             let mut blocks_store = blocks_store_clone.lock().unwrap();
 

@@ -16,8 +16,8 @@ use fides::{ hash, chacha20poly1305 };
 use std::convert::TryInto;
 
 const NOVA_ADDRESS: [u8; 32] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 110, 111, 118, 97];
-const NOVA_STAKE_STORE_ID: [u8; 32] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 110, 111, 118, 97];
-const NOVA_SLOTS_STORE_ID: [u8; 32] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 110, 111, 118, 97];
+const NOVA_STAKE_STORE_ID: [u8; 32] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 115, 116, 97, 107, 101];
+const NOVA_SLOTS_STORE_ID: [u8; 32] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 115, 108, 111, 116, 115];
 const FIRST_ADDRESS: [u8; 32] = [174, 0, 137, 41, 53, 190, 116, 104, 223, 140, 157, 66, 71, 7, 92, 205, 3, 187, 103, 166, 148, 21, 127, 172, 150, 249, 144, 128, 60, 212, 48, 235];
 
 fn main() {
@@ -32,7 +32,7 @@ fn main() {
 
    if args.len() > 3 {
 
-      let command: &str = format!("{} {}", args[1], args[2]);
+      let command: &str = &format!("{} {}", args[1], args[2]);
 
       match command {
 
@@ -64,7 +64,7 @@ fn main() {
 
                      let priv_key = chacha20poly1305::decrypt(&pass_key, &cipher_message);
 
-                     let state: State = State::get(&args[4]);
+                     let state: State = State::current(&args[4]);
 
                      state.sync();
 
@@ -89,7 +89,7 @@ fn main() {
 
          "bootstrap chain" => {
 
-            let state: State = State::get(&args[3]);
+            let state: State = State::current(&args[3]);
 
             state.bootstrap();
 

@@ -16,13 +16,15 @@ impl State {
 
         let accounts_clone = Arc::clone(&self.accounts);
 
+        let accounts_store_clone = Arc::clone(&self.accounts_store);
+
         let blocks_store_clone = Arc::clone(&self.blocks_store);
 
         let pending_transactions_clone = Arc::clone(&self.pending_transactions);
 
         let network_clone = Arc::clone(&self.network);
 
-        let current_block_clone = Arc::clone(&self.current_block);
+        let latest_block_clone = Arc::clone(&self.latest_block);
 
         thread::spawn(move || {
             
@@ -42,17 +44,25 @@ impl State {
                             
                             Ok(block) => {
 
-                                let current_block = current_block_clone.lock().unwrap();
+                                let current_block = latest_block_clone.lock().unwrap();
                                 
                                 if block.previous_block_hash == current_block.hash {
 
                                     let mut accounts = accounts_clone.lock().unwrap();
                                         
-                                    match apply_block(accounts.clone(), block.clone(), current_block.clone()) {
+                                    match apply_block(&mut accounts, block.clone(), current_block.clone()) {
     
-                                        Ok(new_accounts) => {
+                                        Ok(updated_addresses) => {
 
-                                            *accounts = new_accounts;
+                                            let mut accounts_store = accounts_store_clone.lock().unwrap();
+
+                                            for address in updated_addresses {
+
+                                                let account = accounts.get(&address).unwrap();
+
+                                                accounts_store.put(&encode::bytes(&address.to_vec()), &account.to_astro())
+                                                
+                                            }
 
                                             let mut blocks_store = blocks_store_clone.lock().unwrap();
 

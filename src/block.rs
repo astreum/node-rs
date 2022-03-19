@@ -10,6 +10,7 @@ use std::convert::TryInto;
 #[derive(Clone, Debug)]
 pub struct Block {
     pub accounts_hash: [u8; 32],
+    pub body_hash: [u8; 32],
     pub chain: u8,
     pub hash: [u8; 32],
     pub number: Int,
@@ -29,13 +30,14 @@ impl Block {
     pub fn genesis(chain: u8) -> Self {
         Block {
             accounts_hash: [0_u8; 32],
+            body_hash: [0_u8; 32],
             chain: chain,
             hash: [0_u8; 32],
             number: Int::zero(),
             previous_block_hash: [0_u8; 32],
             receipts_hash: [0_u8; 32],
             signature: [0_u8; 64],
-            solar_price: Int::from_decimal("1000000000000000000"),
+            solar_price: Int::from_decimal("1"),
             solar_used: 0,
             time: 1647404661,
             transactions_hash: [0_u8; 32],
@@ -75,6 +77,7 @@ impl Block {
 
             let mut block = Block {
                 accounts_hash: input[1..33].try_into().unwrap(),
+                body_hash: [0_u8; 32],
                 chain: input[33],
                 hash: [0_u8; 32],
                 number: Int::from_bytes(&input[34..66].to_vec()),
