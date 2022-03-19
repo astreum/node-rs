@@ -14,6 +14,7 @@ use neutrondb::Store;
 use astro_notation::decode;
 use fides::{ hash, chacha20poly1305 };
 use std::convert::TryInto;
+use account::Account;
 
 const NOVA_ADDRESS: [u8; 32] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 110, 111, 118, 97];
 const NOVA_STAKE_STORE_ID: [u8; 32] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 115, 116, 97, 107, 101];
@@ -40,8 +41,39 @@ fn main() {
          "wallet key" => wallet::key(),
          "wallet address" => wallet::address(),
          "wallet recover" => wallet::recover(args),
-         "accounts all" => (),
-         "accounts one" => (),
+         "accounts all" => {
+
+            if args.len() == 4 {
+               
+               let accounts_store: Store = Store::connect(&format!("accounts_{}", &args[3]));
+
+               let all_accounts = accounts_store.get_all().expect(&format!("NeutronDB Store for {} accounts is empty!", args[3]));
+
+               println!("Accounts");
+
+               for (address, details) in all_accounts {
+
+                  let acc: Account = Account::from_astro(&details);
+
+                  print!(r###"
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+
+{}
+
+Balance: {} quarks
+                  "###, address, acc.balance.to_decimal());
+               }
+            } else {
+               help()
+            }
+         },
+         "accounts one" => {
+
+            if args.len() == 5 {
+            } else {
+               help()
+            }
+         },
          "tx new" => (),
          "tx cancel" => (),
          "nova stakes" => (),

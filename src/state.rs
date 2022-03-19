@@ -64,7 +64,7 @@ impl State {
 
             None => {
                 
-                let mut nova_account = Account::new(&Int::one());
+                let mut nova_account = Account::new(&Int::from_decimal("1000000000000000000000000"));
 
                 let nova_stake_store: HashMap<[u8; 32], [u8; 32]> = HashMap::from([
                     (FIRST_ADDRESS, Int::one().to_ext_bytes(32).try_into().unwrap())

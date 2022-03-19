@@ -89,15 +89,15 @@ impl Account {
         if details_array.len() == 3 {
 
             let stores_array = list::as_bytes(str::from_utf8(&details_array[2]).unwrap());
-
+            
             for store in stores_array {
 
-                let store_id_and_records = list::as_bytes(str::from_utf8(&store).unwrap());
+                let store_array = list::as_bytes(str::from_utf8(&store).unwrap());
 
-                let store_id: [u8; 32] = store_id_and_records[0].clone().try_into().unwrap();
+                let store_id: [u8; 32] = store_array[0].clone().try_into().unwrap();
 
-                let records = list::as_bytes(str::from_utf8(&store_id_and_records[1]).unwrap());
-
+                let records = list::as_bytes(str::from_utf8(&store_array[1]).unwrap());
+                
                 let mut store_map: HashMap<[u8; 32], [u8; 32]> = HashMap::new();
 
                 for record in records {
@@ -108,11 +108,11 @@ impl Account {
 
                     let value: [u8; 32] = key_and_value[1].clone().try_into().unwrap();
 
-                    store_map.insert(key, value).unwrap();
+                    store_map.insert(key, value);
                 
                 }
 
-                acc.storage.insert(store_id, store_map).unwrap();
+                acc.storage.insert(store_id, store_map);
 
             }
 
@@ -133,15 +133,17 @@ impl Account {
             self.counter.to_bytes()
         ];
 
-        let mut ids_and_records: Vec<String> = Vec::new();
+        let mut stores: Vec<String> = Vec::new();
 
-        for (id, records) in &self.storage {
+        for store in &self.storage {
 
             let mut keys_and_values: Vec<String> = Vec::new();
 
-            for (key, value) in records {
+            for record in store.1 {
 
-                let key_and_value: String = list::from_bytes(vec![key.to_vec(), value.to_vec()]);
+                let key_and_value: String = list::from_bytes(vec![record.0.to_vec(), record.1.to_vec()]);
+
+                println!(" * key_and_value: {:?}", key_and_value);
 
                 keys_and_values.push(key_and_value)
 
@@ -154,26 +156,28 @@ impl Account {
                     .collect()
                 );
 
+            println!(" * records_str: {:?}", records_str);
+
 
             let id_and_records = list::from_bytes(vec![
-                id.to_vec(),
+                store.0.to_vec(),
                 records_str.as_bytes().to_vec()
             ]);
 
-            ids_and_records.push(id_and_records)
+            stores.push(id_and_records)
 
         }
 
-        if !self.storage.is_empty() {
+        if !stores.is_empty() {
             
-            let storage_str: String = list::from_bytes(
-                ids_and_records
+            let stores_str: String = list::from_bytes(
+                stores
                     .iter()
                     .map(|x| x.as_bytes().to_vec())
                     .collect()
             );
 
-            balance_counter_storage.push(storage_str.as_bytes().to_vec())
+            balance_counter_storage.push(stores_str.as_bytes().to_vec())
 
         }
 
