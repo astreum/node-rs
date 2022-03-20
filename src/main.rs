@@ -16,6 +16,8 @@ use fides::{ hash, chacha20poly1305 };
 use std::convert::TryInto;
 use account::Account;
 use opis::Int;
+use block::Block;
+use std::sync::{Arc, Mutex};
 
 const NOVA_ADDRESS: [u8; 32] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 110, 111, 118, 97];
 const NOVA_STAKE_STORE_ID: [u8; 32] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 115, 116, 97, 107, 101];
@@ -126,7 +128,54 @@ Counter: {}
                help()
             }
          },
-         "tx new" => (),
+
+         "tx suggest" => {
+
+            if args.len() == 5 {
+
+               let chain_id: &str = &args[3];
+
+               match chain_id {
+                  "main" => 1,
+                  "test" => 2,
+                  _ => panic!("{} is not a supported chain id!", chain_id)
+               };
+
+               let blocks_store: Store = Store::connect(&format!("blocks_{}", chain_id));
+
+               let latest_block_str = blocks_store.get("latest_block").unwrap();
+
+               let latest_block = Block::from_bytes(&decode::as_bytes(&latest_block_str)).unwrap();
+
+               let suggested_price = latest_block.solar_price + Int::from_decimal("20");
+
+               let accounts_store: Store = Store::connect(&format!("accounts_{}", chain_id));
+
+               match accounts_store.get(&args[4]) {
+                  Some(_) =>
+                     print!(r###"
+Suggestion
+
+- - - + - - - + - - - + - - - + - - - + - - - + - - -
+
+1000 solar limit and {} quark solar price
+                     "###, suggested_price.to_decimal()),
+                  None => print!(r###"
+Suggestion
+- - - + - - - + - - - + - - - + - - - + - - - + - - -
+
+1001000 solar limit and {} quark solar price
+                                       "###, suggested_price.to_decimal())
+               }
+
+            } else {
+               help()
+            }
+
+         },
+         "tx new" => {
+
+         },
          "tx cancel" => (),
          "nova stakes" => {
 
@@ -148,9 +197,9 @@ Counter: {}
                      for (address, stake) in nova_stake_store {
 
                         print!(r###"
-. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+- - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - -
 
-{} : {} quarks
+{}: {} quarks
                         "###, encode::bytes(&address.to_vec()), Int::from_bytes(&stake.to_vec()).to_decimal());
 
                      }
@@ -267,9 +316,9 @@ Commands:
 
    Transactions . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
-   tx suggest [recipient]                                                         suggests solar limit and price
+   tx suggest [chain id][recipient]                                               suggests solar limit and price
    tx new [password] [chain id] [recipient] [amount] [solar limit] [solar price]  create and send a transaction
-   tx cancel [password] [tx hash]                                                 send cancel tx message
+   tx cancel [chain id] [password] [tx hash]                                      send cancel tx message
 
    Nova . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 

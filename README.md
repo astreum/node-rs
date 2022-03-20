@@ -52,9 +52,9 @@ Commands:
 
     Transactions . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
-    tx suggest [recipient]                                                         suggests solar limit and price
+    tx suggest [chain id] [recipient]                                              suggests solar limit and price
     tx new [password] [chain id] [recipient] [amount] [solar limit] [solar price]  create and send a transaction
-    tx cancel [password] [tx hash]                                                 send cancel tx message
+    tx cancel [chain id] [password] [tx hash]                                      send cancel tx message
 
     Nova . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
