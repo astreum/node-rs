@@ -183,7 +183,11 @@ impl Block {
     }
 
     pub fn verify(&self) -> bool {
-        ed25519::verify(&self.body_hash(), &self.validator, &self.signature)
+
+        if self.number == Int::zero() {
+            true
+        } else {
+            ed25519::verify(&self.body_hash(), &self.validator, &self.signature)
+        }
     }
-    
 }

@@ -143,8 +143,6 @@ impl Account {
 
                 let key_and_value: String = list::from_bytes(vec![record.0.to_vec(), record.1.to_vec()]);
 
-                println!(" * key_and_value: {:?}", key_and_value);
-
                 keys_and_values.push(key_and_value)
 
             }
@@ -155,8 +153,6 @@ impl Account {
                     .map(|x| x.as_bytes().to_vec())
                     .collect()
                 );
-
-            println!(" * records_str: {:?}", records_str);
 
 
             let id_and_records = list::from_bytes(vec![

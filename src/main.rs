@@ -11,10 +11,11 @@ mod wallet;
 use state::State;
 use std::env;
 use neutrondb::Store;
-use astro_notation::decode;
+use astro_notation::{encode, decode};
 use fides::{ hash, chacha20poly1305 };
 use std::convert::TryInto;
 use account::Account;
+use opis::Int;
 
 const NOVA_ADDRESS: [u8; 32] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 110, 111, 118, 97];
 const NOVA_STAKE_STORE_ID: [u8; 32] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 115, 116, 97, 107, 101];
@@ -41,28 +42,58 @@ fn main() {
          "wallet key" => wallet::key(),
          "wallet address" => wallet::address(),
          "wallet recover" => wallet::recover(args),
+         "sync blockchain" => {
+
+            if args.len() == 4 {
+
+               let state: State = State::current(&args[3]);
+
+               state.sync();
+
+               loop {}
+
+            } else {
+
+               println!("Please provide the chain id!");
+
+               println!("  sync blockchain [chain id]")
+
+            }
+
+         }
          "accounts all" => {
 
             if args.len() == 4 {
                
                let accounts_store: Store = Store::connect(&format!("accounts_{}", &args[3]));
 
-               let all_accounts = accounts_store.get_all().expect(&format!("NeutronDB Store for {} accounts is empty!", args[3]));
+               match accounts_store.get_all() {
 
-               println!("Accounts");
+                  Some(r) => {
+                     
+                     println!("Accounts");
 
-               for (address, details) in all_accounts {
+                     for (address, details) in r {
 
-                  let acc: Account = Account::from_astro(&details);
+                        let acc: Account = Account::from_astro(&details);
 
-                  print!(r###"
-. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+                        print!(r###"
+- - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - -
 
 {}
 
 Balance: {} quarks
-                  "###, address, acc.balance.to_decimal());
+Counter: {}
+                        "###, address, acc.balance.to_decimal(), acc.counter.to_decimal());
+                     }
+                  },
+
+                  None => {
+                     println!("NeutronDB Store for {} accounts is empty! Sync Blockchain first!", args[3]);
+                     help();
+                  }
                }
+
             } else {
                help()
             }
@@ -70,14 +101,68 @@ Balance: {} quarks
          "accounts one" => {
 
             if args.len() == 5 {
+
+               let accounts_store: Store = Store::connect(&format!("accounts_{}", &args[3]));
+
+               match accounts_store.get(&args[4]) {
+                  Some(r) => {
+
+                     let acc = Account::from_astro(&r);
+                     
+                     print!(r###"
+Account
+- - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - -
+
+Balance: {} quarks
+Counter: {}
+                     "###, acc.balance.to_decimal(), acc.counter.to_decimal())
+                  },
+
+                  None => println!("Account not found!")
+               }
+
+
             } else {
                help()
             }
          },
          "tx new" => (),
          "tx cancel" => (),
-         "nova stakes" => (),
-         "nova stake" => (),
+         "nova stakes" => {
+
+            
+            if args.len() == 4 {
+               
+               let accounts_store: Store = Store::connect(&format!("accounts_{}", &args[3]));
+
+               match accounts_store.get(&encode::bytes(&NOVA_ADDRESS.to_vec())) {
+
+                  Some(r) => {
+
+                     let acc = Account::from_astro(&r);
+
+                     let nova_stake_store = acc.storage.get(&NOVA_STAKE_STORE_ID).unwrap();
+
+                     println!("Stakes");
+
+                     for (address, stake) in nova_stake_store {
+
+                        print!(r###"
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+
+{} : {} quarks
+                        "###, encode::bytes(&address.to_vec()), Int::from_bytes(&stake.to_vec()).to_decimal());
+
+                     }
+
+                  },
+
+                  None => println!("NeutronDB Store for {} accounts is empty!", args[3])
+               }
+            } else {
+               help()
+            }
+         },
          "nova validate" => {
             
             if args.len() == 5 {
@@ -166,29 +251,36 @@ fn help() {
 
    Commands:
 
-      Wallet ...................................................................................................
+      Wallet
+      - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - -
 
       wallet new [password]                                                          create a new wallet
       wallet key                                                                     view encrypted key
       wallet address                                                                 view address
       wallet recover [encrypted key] [password]                                      recover your wallet
 
-      Accounts ...................................................................................................
+      Syncronization
+      - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - -
 
-      accounts all                                                                   view all accounts
-      accounts one [address]                                                         view one account
+      sync blockchain [chain id]                                                     get the latest blocks
 
-      Transaction ...............................................................................................
+      Accounts
+      - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - -
 
-      tx new [password] [chain] [recipient] [amount] [solar limit] [solar price]     create & send a transaction
+      accounts all [chain id]                                                        view all accounts
+      accounts one [chain id] [address]                                              view one account
+
+      Transactions
+      - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - -
+
+      tx new [password] [chain id] [recipient] [amount] [solar limit] [solar price]  create & send a transaction
       tx cancel [password] [tx hash]                                                 send cancel tx message
 
-      Nova .......................................................................................................
+      Nova
+      - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - -
 
-      nova stakes                                                                    view all stakes
-      nova stake [address]                                                           view address stake
-      nova validate [password] [chain]                                               validate the blockchain
-    
+      nova stakes [chain id]                                                          view all stakes
+      nova validate [chain id] [password]                                             validate the blockchain
     "###)
 }
 
