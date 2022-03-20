@@ -1,12 +1,8 @@
 mod account;
 mod block;
-mod bootstrap;
-mod slots;
+mod nova;
 mod state;
-mod sync;
 mod transaction;
-mod transform;
-mod validate;
 mod wallet;
 use state::State;
 use std::env;
@@ -17,7 +13,6 @@ use std::convert::TryInto;
 use account::Account;
 use opis::Int;
 use block::Block;
-use std::sync::{Arc, Mutex};
 
 const NOVA_ADDRESS: [u8; 32] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 110, 111, 118, 97];
 const NOVA_STAKE_STORE_ID: [u8; 32] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 115, 116, 97, 107, 101];
@@ -73,20 +68,16 @@ fn main() {
 
                   Some(r) => {
                      
-                     println!("Accounts");
+                     println!("Accounts . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .");
+
+                     println!("");
 
                      for (address, details) in r {
 
                         let acc: Account = Account::from_astro(&details);
 
-                        print!(r###"
-- - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - -
+                        println!("{}   {} quarks", address, acc.balance.to_decimal())
 
-{}
-
-Balance: {} quarks
-Counter: {}
-                        "###, address, acc.balance.to_decimal(), acc.counter.to_decimal());
                      }
                   },
 
@@ -100,6 +91,7 @@ Counter: {}
                help()
             }
          },
+
          "accounts one" => {
 
             if args.len() == 5 {
@@ -107,23 +99,23 @@ Counter: {}
                let accounts_store: Store = Store::connect(&format!("accounts_{}", &args[3]));
 
                match accounts_store.get(&args[4]) {
+                  
                   Some(r) => {
 
                      let acc = Account::from_astro(&r);
-                     
-                     print!(r###"
-Account
-- - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - -
 
-Balance: {} quarks
-Counter: {}
-                     "###, acc.balance.to_decimal(), acc.counter.to_decimal())
+                     println!("Account . . . . . . . . . . . . . . . . . .");
+                     
+                     println!("");
+
+                     println!("{} quarks", acc.balance.to_decimal());
+
+                     println!("{} quarks", acc.counter.to_decimal());
+
                   },
 
                   None => println!("Account not found!")
                }
-
-
             } else {
                help()
             }
@@ -152,28 +144,39 @@ Counter: {}
                let accounts_store: Store = Store::connect(&format!("accounts_{}", chain_id));
 
                match accounts_store.get(&args[4]) {
-                  Some(_) =>
-                     print!(r###"
-Suggestion
+                  
+                  Some(_) => {
 
-- - - + - - - + - - - + - - - + - - - + - - - + - - -
+                     println!("Suggestion . . . . . . . . .");
 
-1000 solar limit and {} quark solar price
-                     "###, suggested_price.to_decimal()),
-                  None => print!(r###"
-Suggestion
-- - - + - - - + - - - + - - - + - - - + - - - + - - -
+                     println!("");
 
-1001000 solar limit and {} quark solar price
-                                       "###, suggested_price.to_decimal())
+                     println!("1000 solar limit");
+
+                     println!("{} quarks solar price", suggested_price.to_decimal())
+
+                  },
+
+                  None => {
+
+                     println!("Suggestion . . . . . . . . .");
+
+                     println!("");
+
+                     println!("1001000 solar limit");
+
+                     println!("{} quarks solar price", suggested_price.to_decimal())
+
+                  }
                }
-
             } else {
                help()
             }
 
          },
          "tx new" => {
+
+
 
          },
          "tx cancel" => (),
@@ -192,17 +195,17 @@ Suggestion
 
                      let nova_stake_store = acc.storage.get(&NOVA_STAKE_STORE_ID).unwrap();
 
-                     println!("Stakes");
+                     println!("Stakes . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .");
+
+                     println!("");
 
                      for (address, stake) in nova_stake_store {
 
-                        print!(r###"
-- - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - -
-
-{}: {} quarks
-                        "###, encode::bytes(&address.to_vec()), Int::from_bytes(&stake.to_vec()).to_decimal());
+                        print!("{}    {} quarks", encode::bytes(&address.to_vec()), Int::from_bytes(&stake.to_vec()).to_decimal());
 
                      }
+
+                     println!("");
 
                   },
 
@@ -212,6 +215,7 @@ Suggestion
                help()
             }
          },
+
          "nova validate" => {
             
             if args.len() == 5 {

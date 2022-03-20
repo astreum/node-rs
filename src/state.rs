@@ -13,6 +13,10 @@ use std::convert::TryInto;
 use astro_notation::{encode, decode};
 use std::str;
 
+pub mod bootstrap;
+pub mod validate;
+pub mod sync;
+
 #[derive(Debug)]
 pub struct State {
     pub accounts: Arc<Mutex<HashMap<[u8; 32], Account>>>,

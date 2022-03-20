@@ -1,18 +1,17 @@
+
 use astro_notation::{ decode, encode };
-use crate::block::Block;
+use crate::block::{apply_block, Block};
 use crate::state::State;
 use crate::transaction::{ CancelTransaction, Transaction };
-use crate::transform::apply_block;
-use opis::Int;
 use pulsar_network::{ Message, MessageKind };
 use std::sync::Arc;
 use std::thread;
 
 impl State {
 
-    pub fn sync(&self) {
+    pub fn bootstrap(&self) {
 
-        println!("astreuos: syncing ...");
+        println!("bootstrapping ...");
 
         let accounts_clone = Arc::clone(&self.accounts);
 
@@ -27,22 +26,10 @@ impl State {
         let latest_block_clone = Arc::clone(&self.latest_block);
 
         thread::spawn(move || {
-
-            let latest_block = latest_block_clone.lock().unwrap();
-
-            let next_block_number = &latest_block.number + &Int::one();
-
-            drop(latest_block);
-
-            let next_block_message: Message = Message::new(MessageKind::NextBlock, next_block_number.to_ext_bytes(32));
             
             let network = network_clone.lock().unwrap();
-            
-            network.broadcast(next_block_message);
 
-            let messages = network.listen();
-
-            drop(network);
+            let messages = network.bootstrap();
 
             for (message, peer) in &messages {
 
@@ -56,23 +43,23 @@ impl State {
                             
                             Ok(block) => {
 
-                                let latest_block = latest_block_clone.lock().unwrap();
+                                let current_block = latest_block_clone.lock().unwrap();
                                 
-                                if block.previous_block_hash == latest_block.hash {
+                                if block.previous_block_hash == current_block.hash {
 
                                     let mut accounts = accounts_clone.lock().unwrap();
                                         
-                                    match apply_block(&mut accounts, block.clone(), latest_block.clone()) {
+                                    match apply_block::run(accounts.clone(), block.clone(), current_block.clone()) {
     
-                                        Ok(updated_addresses) => {
+                                        Ok(updated) => {
 
                                             let mut accounts_store = accounts_store_clone.lock().unwrap();
 
-                                            for address in updated_addresses {
+                                            for (address, acc) in updated {
 
-                                                let account = accounts.get(&address).unwrap();
+                                                accounts.insert(address, acc);
 
-                                                accounts_store.put(&encode::bytes(&address.to_vec()), &account.to_astro())
+                                                accounts_store.put(&encode::bytes(&address.to_vec()), &acc.to_astro())
 
                                             }
 
@@ -90,8 +77,6 @@ impl State {
                     },
 
                     MessageKind::CancelTransaction => {
-
-                        println!("astreuos: transaction cancellation received from {} ...", peer.address);
     
                         match CancelTransaction::from_bytes(&message.body) {
     
@@ -129,8 +114,6 @@ impl State {
 
                     MessageKind::NextBlock => {
 
-                        println!("astreuos: next block request from {} ...", peer.address);
-
                         let blocks_store = blocks_store_clone.lock().unwrap();
     
                         match blocks_store.get(&encode::bytes(&message.body)) {
@@ -152,8 +135,6 @@ impl State {
                     },
     
                     MessageKind::Transaction => {
-
-                        println!("astreuos: transaction received from {} ...", peer.address);
                         
                         match Transaction::from_bytes(&message.body) {
     
@@ -189,6 +170,8 @@ impl State {
                     }
                 }
             }
+
         });
+
     }
 }

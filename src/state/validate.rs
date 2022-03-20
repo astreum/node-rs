@@ -1,9 +1,9 @@
 
 use crate::account::accounts_hash;
 use crate::block::Block;
-use crate::slots;
+use crate::nova::slots;
 use crate::state::State;
-use crate::transaction::Transaction;
+use crate::transaction::{apply_many, Transaction};
 use crate::NOVA_ADDRESS;
 use crate::NOVA_SLOTS_STORE_ID;
 use crate::NOVA_STAKE_STORE_ID;
@@ -14,14 +14,13 @@ use std::thread;
 use std::time::{Duration,Instant,SystemTime };
 use std::sync::Arc;
 use std::convert::TryInto;
-use crate::transform::{apply_txs};
 use crate::merkle_tree_hash;
 
 impl State {
 
     pub fn validate(&self, private_key: [u8; 32]) {
 
-        println!("astreuos: validating ...");
+        println!("validating ...");
 
         let pub_key: [u8; 32] = ed25519::public_key(&private_key);
 
@@ -125,7 +124,11 @@ impl State {
 
                         txs.sort_by_key(|k| &Int::from_bytes(&k.hash.to_vec()) ^ &current_block_transactions_hash_int);
 
-                        let (_, applied_txs, receipts) = apply_txs(&mut accounts, txs, &current_solar_price);
+                        let (updated, applied_txs, receipts) = apply_many::run(accounts.clone(), txs, &current_solar_price);
+
+                        for (address, acc) in updated {
+                            accounts.insert(address, acc);
+                        }
 
                         let mut validator = accounts.get(&pub_key).unwrap().clone();
                         
@@ -157,12 +160,14 @@ impl State {
                             .iter()
                             .fold(0, | acc, x | acc + x.solar_used );
 
+                        let accs_hash: [u8; 32] = accounts_hash(&accounts);
+
                         while (SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs() - latest_block.time) % 3 != 0 {
                             thread::sleep(Duration::from_millis(100));
                         }
 
                         let mut new_block: Block = Block {
-                            accounts_hash: accounts_hash(&accounts),
+                            accounts_hash: accs_hash,
                             body_hash: [0_u8; 32],
                             chain: latest_block.chain,
                             hash: [0_u8; 32],

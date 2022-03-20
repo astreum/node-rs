@@ -5,6 +5,9 @@ use opis::Int;
 use std::error::Error;
 use std::convert::TryInto;
 
+pub mod apply_many;
+pub mod apply_one;
+
 #[derive(Clone, Debug)]
 pub struct Transaction {
     pub chain: u8,
@@ -117,4 +120,27 @@ impl CancelTransaction {
     pub fn verify(&self, tx: &Transaction) -> bool {
         ed25519::verify(&self.transaction_hash, &tx.sender, &self.signature)
     }
+}
+
+#[derive(Clone, Debug)]
+pub struct Receipt {
+    pub solar_used: u32,
+    pub status: Status
+}
+
+impl Receipt {
+    pub fn hash(&self) -> [u8; 32] {
+        match self.status {
+            Status::Accepted => merkle_tree_hash(vec![hash(&self.solar_used.to_be_bytes().to_vec()), hash(&vec![1_u8])]),
+            Status::BalanceError => merkle_tree_hash(vec![hash(&self.solar_used.to_be_bytes().to_vec()), hash(&vec![2_u8])]),
+            Status::SolarError => merkle_tree_hash(vec![hash(&self.solar_used.to_be_bytes().to_vec()), hash(&vec![3_u8])])
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
+pub enum Status {
+    Accepted,
+    BalanceError,
+    SolarError
 }

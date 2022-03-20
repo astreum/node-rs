@@ -7,6 +7,8 @@ use std::error::Error;
 
 use std::convert::TryInto;
 
+pub mod apply_block;
+
 #[derive(Clone, Debug)]
 pub struct Block {
     pub accounts_hash: [u8; 32],

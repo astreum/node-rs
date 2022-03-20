@@ -6,6 +6,7 @@ use opis::Int;
 use std::collections::HashMap;
 use std::str;
 use std::convert::TryInto;
+pub mod hashing;
 
 #[derive(Clone, Debug)]
 pub struct Account {
