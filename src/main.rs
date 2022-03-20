@@ -241,46 +241,40 @@ fn header() {
 Rust Astreuos
 
 version 1.0.0
-   
     "###)
 }
 
 fn help() {
    
    println!(r###"
+Commands:
 
-   Commands:
+   Wallet . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
-      Wallet
-      - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - -
+   wallet new [password]                                                          create a new wallet
+   wallet key                                                                     view encrypted key
+   wallet address                                                                 view address
+   wallet recover [encrypted key] [password]                                      recover your wallet
 
-      wallet new [password]                                                          create a new wallet
-      wallet key                                                                     view encrypted key
-      wallet address                                                                 view address
-      wallet recover [encrypted key] [password]                                      recover your wallet
+   Syncronization . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
-      Syncronization
-      - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - -
+   sync blockchain [chain id]                                                     get the latest blocks
 
-      sync blockchain [chain id]                                                     get the latest blocks
+   Accounts . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
-      Accounts
-      - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - -
+   accounts all [chain id]                                                        view all accounts
+   accounts one [chain id] [address]                                              view one account
 
-      accounts all [chain id]                                                        view all accounts
-      accounts one [chain id] [address]                                              view one account
+   Transactions . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
-      Transactions
-      - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - -
+   tx suggest [recipient]                                                         suggests solar limit and price
+   tx new [password] [chain id] [recipient] [amount] [solar limit] [solar price]  create and send a transaction
+   tx cancel [password] [tx hash]                                                 send cancel tx message
 
-      tx new [password] [chain id] [recipient] [amount] [solar limit] [solar price]  create & send a transaction
-      tx cancel [password] [tx hash]                                                 send cancel tx message
+   Nova . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
-      Nova
-      - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - -
-
-      nova stakes [chain id]                                                          view all stakes
-      nova validate [chain id] [password]                                             validate the blockchain
+   nova stakes [chain id]                                                          view all stakes
+   nova validate [chain id] [password]                                             validate the blockchain
     "###)
 }
 

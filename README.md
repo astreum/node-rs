@@ -22,10 +22,10 @@ This is the Official Node for the Astreuos Blockchain.
 
 - wallet creation
 - wallet recovery
-- view all and single address accounts
-- create and send transactions
-- send cancel transaction message
-- view all and single address stakes
+- view all accounts
+- send transactions
+- cancel transactions
+- view nova stakes
 - blockchain validation
 
 ## Help
@@ -34,37 +34,33 @@ This is the Official Node for the Astreuos Blockchain.
 
 Commands:
 
-    Wallet
-    - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - -
+    Wallet . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
     wallet new [password]                                                          create a new wallet
     wallet key                                                                     view encrypted key
     wallet address                                                                 view address
     wallet recover [encrypted key] [password]                                      recover your wallet
 
-    Syncronization
-    - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - -
+    Syncronization . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
     sync blockchain [chain id]                                                     get the latest blocks
 
-    Accounts
-    - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - -
+    Accounts . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
     accounts all [chain id]                                                        view all accounts
     accounts one [chain id] [address]                                              view one account
 
-    Transactions
-    - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - -
+    Transactions . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
-    tx new [password] [chain id] [recipient] [amount] [solar limit] [solar price]  create & send a transaction
+    tx suggest [recipient]                                                         suggests solar limit and price
+    tx new [password] [chain id] [recipient] [amount] [solar limit] [solar price]  create and send a transaction
     tx cancel [password] [tx hash]                                                 send cancel tx message
 
-    Nova
-    - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - - + - - -
+    Nova . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 
     nova stakes [chain id]                                                          view all stakes
     nova validate [chain id] [password]                                             validate the blockchain
 
 ```
 
-2022-03-17
+2022-03-20
