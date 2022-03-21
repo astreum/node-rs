@@ -29,7 +29,7 @@ pub fn run(
                 applied_txs.push(tx);
 
                 for (address, account) in updated{
-                    updated_accs.insert(address, account);
+                    updated_accs.insert(address, account.clone());
                     accounts.insert(address, account);
                 }
 

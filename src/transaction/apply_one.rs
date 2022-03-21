@@ -128,15 +128,15 @@ pub fn run(
                         }
 
                     } else {
-                        (vec![], None)
+                        (HashMap::new(), None)
                     }
                 },
-                None => (vec![], None)
+                None => (HashMap::new(), None)
             }
         } else {
-            (vec![], None)
+            (HashMap::new(), None)
         }
     } else {
-        (vec![], None)
+        (HashMap::new(), None)
     }
 }

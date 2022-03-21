@@ -51,9 +51,8 @@ fn main() {
 
             } else {
 
-               println!("Please provide the chain id!");
-
-               println!("  sync blockchain [chain id]")
+               println!("Please check syntax!");
+               println!("sync blockchain [chain id]")
 
             }
 
@@ -83,12 +82,13 @@ fn main() {
 
                   None => {
                      println!("NeutronDB Store for {} accounts is empty! Sync Blockchain first!", args[3]);
-                     help();
+                     println!("sync blockchain [chain id]")
                   }
                }
 
             } else {
-               help()
+               println!("Please check syntax!");
+               println!("accounts all [chain id]")
             }
          },
 
@@ -110,14 +110,15 @@ fn main() {
 
                      println!("{} quarks", acc.balance.to_decimal());
 
-                     println!("{} quarks", acc.counter.to_decimal());
+                     println!("{} transactions", acc.counter.to_decimal());
 
                   },
 
                   None => println!("Account not found!")
                }
             } else {
-               help()
+               println!("Please check syntax!");
+               println!("accounts one [chain id] [address]")
             }
          },
 
@@ -146,37 +147,29 @@ fn main() {
                match accounts_store.get(&args[4]) {
                   
                   Some(_) => {
-
-                     println!("Suggestion . . . . . . . . .");
-
-                     println!("");
-
                      println!("1000 solar limit");
-
                      println!("{} quarks solar price", suggested_price.to_decimal())
-
                   },
 
                   None => {
-
-                     println!("Suggestion . . . . . . . . .");
-
-                     println!("");
-
                      println!("1001000 solar limit");
-
                      println!("{} quarks solar price", suggested_price.to_decimal())
-
                   }
                }
             } else {
-               help()
+               println!("Please check syntax!");
+               println!("tx suggest [chain id] [recipient]")
             }
 
          },
          "tx new" => {
 
+            if args.len() == 9 {
 
+            } else {
+               println!("Please check syntax!");
+               println!("tx suggest [chain id] [recipient]")
+            }
 
          },
          "tx cancel" => (),
@@ -209,10 +202,14 @@ fn main() {
 
                   },
 
-                  None => println!("NeutronDB Store for {} accounts is empty!", args[3])
+                  None => {
+                     println!("Please sync blockchain!");
+                     println!("sync blockchain [chain id]")
+                  }
                }
             } else {
-               help()
+               println!("Please check syntax!");
+               println!("nova stakes [chain id]")
             }
          },
 
@@ -252,8 +249,8 @@ fn main() {
                }
 
             } else {
-               println!("Please provide an password & chain ...");
-               help()
+               println!("Please check syntax!");
+               println!("nova stakes [chain id]")
             }
          },
 
@@ -266,10 +263,14 @@ fn main() {
             loop {}
 
          },
-         _ => help()
+         _ => {
+            println!("Please check syntax!");
+            help()
+         }
       }
 
    } else {
+      println!("Please check syntax!");
       help()
    }
    

@@ -57,9 +57,9 @@ impl State {
 
                                             for (address, acc) in updated {
 
-                                                accounts.insert(address, acc);
+                                                accounts_store.put(&encode::bytes(&address.to_vec()), &acc.to_astro());
 
-                                                accounts_store.put(&encode::bytes(&address.to_vec()), &acc.to_astro())
+                                                accounts.insert(address, acc);
 
                                             }
 

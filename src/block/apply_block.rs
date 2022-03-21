@@ -73,7 +73,7 @@ pub fn run(
 
         let number_of_transactions = latest_block.transactions.len();
         
-        let (updated, _, receipts) = apply_many::run(accounts.clone(), latest_block.transactions, &current_solar_price);
+        let (updated, _, receipts) = apply_many::run(accounts.clone(), latest_block.transactions.clone(), &current_solar_price);
 
         if receipts.len() == number_of_transactions {
             
