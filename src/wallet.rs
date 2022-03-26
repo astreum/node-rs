@@ -2,7 +2,6 @@ use std::convert::TryInto;
 use astro_notation::{encode, decode};
 use fides::{hash, ed25519, chacha20poly1305};
 use neutrondb::Store;
-use crate::help;
 
 pub fn create(args: Vec<String>) {
 

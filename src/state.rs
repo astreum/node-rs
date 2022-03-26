@@ -5,6 +5,7 @@ use crate::block::Block;
 use crate::transaction::Transaction;
 use std::sync::{Arc, Mutex};
 use pulsar_network::{Network, Route};
+use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use opis::Int;
 use crate::{FIRST_ADDRESS, NOVA_ADDRESS};
 use crate::NOVA_SLOTS_STORE_ID;
@@ -43,7 +44,11 @@ impl State {
             _ => panic!("{} is not a supported chain!", chain)
         };
 
-        let network = Network::configure(network_route);
+        let seeders: Vec<SocketAddr> = vec![
+            SocketAddr::new(IpAddr::V4(Ipv4Addr::new(192, 168, 100, 5)), 55555)
+        ];
+
+        let network = Network::configure(network_route, seeders);
 
         
 
