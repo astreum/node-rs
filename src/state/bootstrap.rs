@@ -11,8 +11,6 @@ impl State {
 
     pub fn bootstrap(&self) {
 
-        println!("bootstrapping ...");
-
         let accounts_clone = Arc::clone(&self.accounts);
 
         let accounts_store_clone = Arc::clone(&self.accounts_store);
@@ -37,7 +35,7 @@ impl State {
                     
                     MessageKind::Block => {
 
-                        println!("astreuos: block received from {} ...", peer.address);
+                        println!();
     
                         match Block::from_bytes(&message.body) {
                             
@@ -70,6 +68,9 @@ impl State {
                                         },
                                         _ => ()
                                     }
+
+                                    println!("+ block received from {} ...", peer.address);
+
                                 }
                             },
                             _ => ()

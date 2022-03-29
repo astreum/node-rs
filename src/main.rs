@@ -3,18 +3,17 @@ mod block;
 mod nova;
 mod state;
 mod transaction;
+mod interface;
 use state::State;
 use neutrondb::Store;
 use astro_notation::{encode, decode};
 use std::convert::TryInto;
-use account::Account;
 use opis::Int;
-use block::Block;
 use transaction::Transaction;
 use fides::{hash, ed25519, chacha20poly1305};
 use std::sync::Arc;
 use pulsar_network::{Message, MessageKind};
-use std::io;
+use interface::Interface;
 
 const NOVA_ADDRESS: [u8; 32] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 110, 111, 118, 97];
 const NOVA_STAKE_STORE_ID: [u8; 32] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 115, 116, 97, 107, 101];
@@ -27,10 +26,10 @@ const HEADER: &str = r###"
 	*   .      *           *               * .       *    .   .
 	.                     *    .    * .            .         .   .   .
 
-Rust Astreuos version 0.0.1
+Rust Astreuos v 0.0.1
 "###;
 
-const STARTUP: &str = r###"
+const WELCOME_HEADER: &str = r###"
 *      .       *    .               *     .    *          *
 .  .        .           *    .     *  .            .
 	*   .      *           *               * .       *    .   .
@@ -45,16 +44,6 @@ const STARTUP: &str = r###"
 Rust Astreuos
 
 version 0.0.1
-"###;
-
-const HOME: &str = r###"
-Home,
-
-+ Wallet
-+ Accounts
-+ Transact
-+ Nova
-+ Settings
 "###;
 
 use std::io::Write;
@@ -79,132 +68,90 @@ fn prompt(name:&str) -> String {
 
 }
 
-struct Frame {
-	pub lines: Vec<String>
-}
-
-impl Frame {
-	
-	pub fn welcome() -> Self {
-		
-		Frame {
-			lines: vec![String::from(r###"
-Welcome,
-
-+ login
-+ new
-+ recover
-			"###)]
-		}
-
-	}
-
-	pub fn render(&self, private_key: &[u8; 32]) {
-		
-		print!("\x1Bc");
-
-		if private_key == &[0_u8; 32] {
-			println!("{}", STARTUP)
-		} else {
-			println!("{}", HEADER)
-		}
-
-		for line in &self.lines {
-			println!("{}", line)
-		}
-
-    	println!("- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -")
-
-	}
-
-}
-
 fn main() {
+
+	let mut ui: Interface = Interface::new();
 
 	let mut context: Context = Context::Welcome;
 
 	let mut app_store: Store = Store::connect("app");
 
-	let chain: String = match app_store.get("chain") {
+	let chain = match app_store.get("chain"){
 		Some(r) => r,
 		None => "test".to_string()
 	};
 
-	let chain_borrow: &str = &chain;
-
-	let chain_id: u8 = match chain_borrow {
-		"main" => 1,
-		"test" => 2,
-		_ => panic!("Chain not supported!")
+	let validation = match app_store.get("validation") {
+		Some(r) => r,
+		None => encode::bool(&false)
 	};
 
 	let state: State = State::current(&chain);
 
-	let validation: bool = true;
-
 	let mut private_key: [u8; 32] = [0_u8; 32];
 
-	let mut master_public_key: [u8; 32] = [0_u8; 32];
+	let mut public_key: [u8; 32] = [0_u8; 32];
 
 	let mut input_cache: Vec<String> = Vec::new();
 
-    let mut frame: Frame = Frame::welcome();
+	let welcome: Vec<&str> = vec!["Welcome,", "", "+ login", "+ new", "+ recover"];
 
-	frame.render(&private_key);
+	let home: Vec<&str> = vec!["Home,", "", "+ Wallet", "+ Accounts", "+ Transact", "+ Nova", "+ Settings"];
+
+	ui.header = WELCOME_HEADER.to_string();
+	ui.udpate(&welcome);
+	ui.refresh();
 
     loop {
 
-		let prompt_str = match context {
-			Context::Welcome => "type here: > ",
-			_ => "> "
-		};
+		let prompt_str = match context { Context::Welcome => "type here: > ", _ => "> " };
 		
 		let input: &str = &prompt(prompt_str);
 		
 		if input == "exit" {
-			
+
 			break;
 		
 		} else if input == "home" && private_key != [0_u8; 32] {
-
+			
 			context = Context::Home;
+			
+			ui.udpate(&home);
 
-			frame.lines = vec![HOME.to_string()]
-		
 		} else {
 			
 			match context {
-				
+
 				Context::Welcome => {
 					
 					match input {
 						
 						"login" => {
 							context = Context::Login;
-							frame.lines = vec!["Enter password,".to_string()]
+							ui.lines = vec!["Enter password,".to_string()]
 						},
 						
 						"new" => {
 							context = Context::New;
-							frame.lines = vec!["Enter password,".to_string()]
+							ui.lines = vec!["Enter password,".to_string()]
 						},
-						
 						// "recover" => { context = Context::Home; body = "Home" },
-
+						
 						"bootstrap" => {
 							state.bootstrap();
-							frame.lines = vec!["Bootstrapping,".to_string()]
+							ui.lines = vec!["Bootstrapping,".to_string()]
 						}
 						
-						_ => frame.lines = vec!["Type login, new or recover!".to_string()]
+						_ => ui.lines.push("Type login, new or recover!".to_string())
 					
 					}
-				
 				},
 				
 				Context::Login => {
 
 					let private_key_cipher = app_store.get("priv_key").expect("Could not find private key!");
+
+					let validation = app_store.get("validation").expect("could not find validation settings!");
 
 					let cipher_buf: Vec<u8> = decode::as_bytes(&private_key_cipher);
 
@@ -214,19 +161,21 @@ fn main() {
 
 					private_key = priv_key.try_into().unwrap();
 
-					if validation {
-						state.validate(private_key)
-					}
-
 					let pub_key = app_store.get("pub_key").unwrap();
 
-					master_public_key = decode::as_bytes(&pub_key).try_into().unwrap();
+					public_key = decode::as_bytes(&pub_key).try_into().unwrap();
 
 					context = Context::Home;
 
-					frame.lines = vec![HOME.to_string()];
+					ui.header = HEADER.to_string();
 
-					state.sync()
+					ui.udpate(&home);
+
+					state.sync();
+					
+					if decode::as_bool(&validation) {
+						state.validate(private_key)
+					}
 
 				},
 
@@ -238,31 +187,29 @@ fn main() {
 
 							context = Context::Login;
 
-							frame.lines = vec!["Private Key found! Enter password again,".to_string()]
+							ui.lines = vec!["Private Key found! Enter password again,".to_string()]
 
 						},
 					
 						None => {
 						
 							private_key = ed25519::private_key();
-							
-							master_public_key = ed25519::public_key(&private_key);
+							public_key = ed25519::public_key(&private_key);
 						
 							let pass_key: [u8; 32] = hash(&input.as_bytes().to_vec());
 						
 							let encrypted_priv = chacha20poly1305::encrypt(&pass_key, &private_key.to_vec());
 						
 							app_store.put("priv_key", &encode::bytes(&encrypted_priv));
-						
-							app_store.put("pub_key", &encode::bytes(&master_public_key.to_vec()));
-
+							app_store.put("pub_key", &encode::bytes(&public_key.to_vec()));
 							app_store.put("chain", "test");
-
-							app_store.put("validate", "no");
+							app_store.put("validation", &encode::bool(&false));
 							
 							context = Context::Home;
-							
-							frame.lines = vec![HOME.to_string()];
+
+							ui.header = HEADER.to_string();
+
+							ui.udpate(&home);
 
 							state.sync()
 
@@ -275,28 +222,40 @@ fn main() {
 					match input {
 						
 						"wallet" => {
+							
 							let private_key_cipher = app_store.get("priv_key").unwrap();
-							let public_key = app_store.get("pub_key").unwrap();
-							frame.lines = vec![
-								"Wallet,".to_string(), "".to_string(),
-								"Encrypted Key".to_string(),
-								private_key_cipher[..61].to_string(),
-								private_key_cipher[61..].to_string(), "".to_string(),
-								"Address".to_string(),
-								public_key
-							]
+							
+							// let pub_key = app_store.get("pub_key").unwrap();
+
+							let pub_key: String = format!("{:?}",public_key);
+							
+							let update = vec![
+								"Wallet,","",
+								"encrypted key",
+								&private_key_cipher[..61],
+								&private_key_cipher[61..], "",
+								"address",
+								&pub_key
+							];
+
+							ui.udpate(&update);
+
 						},
 
 						"accounts" => {
+							
 							let accs_clone = Arc::clone(&state.accounts);
+							
 							let accs = accs_clone.lock().unwrap();
-							frame.lines = vec!["Accounts,".to_string(), "".to_string()];
+							
+							ui.udpate(&vec!["Accounts,", ""]);
+							
 							accs
 								.iter()
 								.for_each(|x| 
-									frame.lines.push(
+									ui.lines.push(
 										format!(
-											"{} {} quarks",
+											"{} {} Quarks",
 											encode::bytes(&x.0.to_vec()),
 											x.1.balance.to_decimal()
 										)
@@ -305,13 +264,11 @@ fn main() {
 						},
 						
 						"transact" => {
+							
 							context = Context::Transact;
-							frame.lines = vec![
-								"Transact,".to_string(),
-								"".to_string(),
-								"+ new".to_string(),
-								"+ cancel".to_string()
-							];
+							
+							ui.udpate(&vec!["Transact,", "", "+ new", "+ cancel"])
+
 						},
 						
 						"nova" => {
@@ -324,12 +281,12 @@ fn main() {
 							
 							let nova_stake_store = acc.storage.get(&NOVA_STAKE_STORE_ID).unwrap();
 
-							frame.lines = vec!["Nova Stakes,".to_string(), "".to_string()];
+							ui.udpate(&vec!["Nova Stakes,", ""]);
 
 							nova_stake_store
 								.iter()
 								.for_each(|x| 
-									frame.lines.push(
+									ui.lines.push(
 										format!(
 											"{} {} quarks",
 											encode::bytes(&x.0.to_vec()),
@@ -342,15 +299,15 @@ fn main() {
 
 						"settings" => {
 							context = Context::Settings;
-							frame.lines = vec![
+							ui.lines = vec![
 								"Settings,".to_string(), "".to_string(),
-								format!("+ network: {}", chain),
-								format!("+ validation: {}", validation), "".to_string(),
+								format!("+ chain: {}", chain),
+								format!("+ validation: {}", decode::as_bool(&validation)), "".to_string(),
 								"Type network or validation to change settings!".to_string()
 							];
 						},
 
-						_ => frame.lines = vec!["Type wallet, accounts, transact, nova or settings!".to_string()]
+						_ => ui.lines = vec!["Type wallet, accounts, transact, nova or settings!".to_string()]
 
 					}
 
@@ -359,14 +316,14 @@ fn main() {
 				Context::Transact => {
 					match input {
 						"new" => {
-							frame.lines = vec![
+							ui.lines = vec![
 								"New Transaction,".to_string(),
 								"".to_string(),
 								"enter recipient address:".to_string()
 							];						
 						},
 						"cancel" => (),
-						_ => frame.lines = vec!["Type new or cancel!".to_string()]
+						_ => ui.lines = vec!["Type new or cancel!".to_string()]
 					}
 				},
 
@@ -376,31 +333,39 @@ fn main() {
 						
 						if input == "send" {
 
-							frame.lines.pop();
+							ui.lines.pop();
 							
-							frame.lines.push("Sending . . .".to_string());
+							ui.lines.push("Sending . . .".to_string());
 							
-							frame.render(&private_key);
+							ui.refresh();
 
 							let accs_clone = Arc::clone(&state.accounts);
 
 							let accs = accs_clone.lock().unwrap();
 
-							let acc = accs.get(&master_public_key).unwrap();
+							let acc = accs.get(&public_key).unwrap();
+
+							let chain_borrow: &str = &chain;
+
+							let chain_id = match chain_borrow {
+								"main" => 1,
+								"test" => 2,
+								_ => panic!("internal error")
+							};
 
 							let mut tx = Transaction {
 								chain: chain_id,
 								counter: acc.counter.clone(),
 								hash: [0_u8; 32],
 								recipient: decode::as_bytes(&input_cache[0]).try_into().unwrap(),
-								sender: master_public_key,
+								sender: public_key,
 								signature: [0_u8; 64],
 								solar_limit: u32::from_str_radix(&input_cache[2], 10).unwrap(),
 								solar_price: Int::from_decimal(&input_cache[3]),
 								value: Int::from_decimal(&input_cache[1])
 							};
 							
-							tx.signature = ed25519::sign(&tx.body_hash(), &private_key, &master_public_key);
+							tx.signature = ed25519::sign(&tx.body_hash(), &private_key, &public_key);
 
 							let new_tx_message: Message = Message::new(MessageKind::Transaction, tx.to_bytes());
 
@@ -410,9 +375,9 @@ fn main() {
 
 							net.broadcast(new_tx_message);
 
-							frame.lines.pop();
+							ui.lines.pop();
 
-							frame.lines.push("Sent!".to_string())
+							ui.lines.push("Sent!".to_string())
 
 						}
 
@@ -422,30 +387,30 @@ fn main() {
 
 						match input_cache.len() {
 							1 => {
-								frame.lines.pop();
-								frame.lines.push(format!("Recipient: {}", input_cache[0]));
-								frame.lines.push("Enter Amount:".to_string())
+								ui.lines.pop();
+								ui.lines.push(format!("Recipient: {}", input_cache[0]));
+								ui.lines.push("Enter Amount:".to_string())
 							},
 
 							2 => {
-								frame.lines.pop();
-								frame.lines.push(format!("Amount: {}", input_cache[1]));
-								frame.lines.push("Enter Solar Limit:".to_string())
+								ui.lines.pop();
+								ui.lines.push(format!("Amount: {}", input_cache[1]));
+								ui.lines.push("Enter Solar Limit:".to_string())
 							},
 
 							3 => {
-								frame.lines.pop();
-								frame.lines.push(format!("Solar Limit: {}", input_cache[2]));
-								frame.lines.push("Enter Solar Price:".to_string())
+								ui.lines.pop();
+								ui.lines.push(format!("Solar Limit: {}", input_cache[2]));
+								ui.lines.push("Enter Solar Price:".to_string())
 							},
 
 							4 => {
-								frame.lines.pop();
-								frame.lines.push(format!("Solar Price: {}", input_cache[3]));
-								frame.lines.push("Type send to proceed.".to_string())
+								ui.lines.pop();
+								ui.lines.push(format!("Solar Price: {}", input_cache[3]));
+								ui.lines.push("Type send to proceed.".to_string())
 							}
 
-							_ => frame.lines = vec!["Error!".to_string()]
+							_ => ui.lines = vec!["Error!".to_string()]
 						}
 					}
 
@@ -456,29 +421,37 @@ fn main() {
 				Context::Settings => {
 
 					match input {
-						"network" => (),
-						"validation" => (),
+						"network" => {
+
+							let chain_borrow: &str = &chain;
+
+							match chain_borrow {
+								"main" => app_store.put("network", "test"),
+								"test" => app_store.put("network", "main"),
+								_ => ()
+							}
+						},
+						"validation" => {
+							match decode::as_bool(&validation) {
+								false => app_store.put("validation", &encode::bool(&true)),
+								true => app_store.put("validation", &encode::bool(&false))
+							}
+						},
 						_ => ()
 					}
-					
-				},
 
-				_ => {
+					context = Context::Settings;
 
-					context = Context::Home;
-					
-					frame.lines = vec![HOME.to_string()]
-				
+					ui.lines = vec![
+						"Settings,".to_string(), "".to_string(),
+						"Please Restart the App!".to_string()
+					];
+
 				}
-			
 			}
-		
 		}
-
-		frame.render(&private_key);
-	
+		ui.refresh();
 	}
-
 }
 
 fn merkle_tree_hash(mut hashes: Vec<[u8;32]>) -> [u8; 32] {

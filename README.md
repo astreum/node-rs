@@ -12,7 +12,7 @@
 .v   v.  .vvv.      v     .v   v.  .vvvv.   .vvv.    .vvv.   .vvv.   .v.
 
 Rust Astreuos
-version 1.0.0
+version 0.0.1
 
 ```
 
@@ -27,4 +27,4 @@ This is the Official Node for the Astreuos Blockchain.
 - view nova stakes
 - blockchain validation
 
-2022-03-26
+2022-03-29

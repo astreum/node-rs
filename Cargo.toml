@@ -1,11 +1,11 @@
 [package]
 name = "rust-astreuos"
-version = "0.2.0"
+version = "0.0.1"
 edition = "2018"
 
 [dependencies]
 astro-notation = "3.1.0"
-neutrondb = "2.2.0"
+neutrondb = "2.2.1"
 rand = "0.8.4"
 sha3 = "0.9.1"
 ring = "0.16.20"
