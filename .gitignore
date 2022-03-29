@@ -2,7 +2,7 @@
 # will have compiled files and executables
 /target/
 
-/ndb/
+/neutrondb/
 
 /src/library.rs
 /src/library
