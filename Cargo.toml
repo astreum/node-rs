@@ -6,3 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+astro-format = "0.8.0"
+fides = "2.3.0"
+neutrondb = "2.3.0"
+opis = "3.1.0"
