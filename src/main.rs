@@ -1,7 +1,9 @@
 mod account;
+mod accounts;
 mod block;
 mod server;
 mod state;
+mod transaction;
 use account::Account;
 use astro_format::string;
 use fides::{hash, chacha20poly1305, ed25519};
@@ -26,15 +28,15 @@ impl fmt::Debug for Chain {
 }
 
 #[derive(Debug)]
-enum Flag { Bootstrap, Empty, Validation }
+enum Flag { Bootstrap, Empty, Validate }
 
 fn main() -> Result<(), Box<dyn Error>> {
 
-    println!("Started ...");
+    println!("started ...");
     
     let args: Vec<String> = env::args().collect();
 
-    let (password, chain, _flag) = parser(args)?;
+    let (password, chain, flag) = parser(args)?;
 
     let password_key = hash(password.as_bytes());
 
@@ -50,13 +52,21 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
     };
 
-    println!("Key Okay!");
+    println!("key okay! ...");
 
     let state = State::new(&chain)?;
 
+    state.sync();
+
+    match flag {
+        Flag::Bootstrap => state.bootstrap(),
+        Flag::Validate => state.validate(),
+        _ => ()
+    }
+
     let listener = TcpListener::bind("127.0.0.1:7878")?;
 
-    println!("Serving API ...");
+    println!("serving terminal api ...");
 
     for stream in listener.incoming() {
 
@@ -70,13 +80,13 @@ fn main() -> Result<(), Box<dyn Error>> {
 
         if request.method == Some("GET".to_string()) && request.path == Some("/accounts".to_string()) {
 
-            let accounts_store_clone = Arc::clone(&state.accounts_store);
+            let accounts_clone = Arc::clone(&state.accounts);
 
-            let accounts_store = accounts_store_clone.lock().unwrap();
+            let accounts = accounts_clone.lock().unwrap();
 
             let mut contents: String = String::from("{");
 
-            for (address, account) in accounts_store.get_all().unwrap() {
+            for (address, account) in accounts.store.get_all().unwrap() {
 
                 let account_bytes = string::decode::bytes(&account)?;
 
@@ -128,7 +138,7 @@ fn parser(args: Vec<String>) -> Result<(String, Chain, Flag), Box<dyn Error>> {
             
             let flag = match &args[3][..] {
                 "-b" => Flag::Bootstrap,
-                "-v" => Flag::Validation,
+                "-v" => Flag::Validate,
                 _ => Err("Unknown Flag!")?
             };
 

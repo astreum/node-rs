@@ -31,6 +31,7 @@ dependencies = [
  "fides",
  "neutrondb",
  "opis",
+ "pulsar-network",
 ]
 
 [[package]]
@@ -309,6 +310,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ec757218438d5fda206afc041538b2f6d889286160d649a86a24d37e1235afd1"
 dependencies = [
  "unicode-xid",
+]
+
+[[package]]
+name = "pulsar-network"
+version = "0.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c29dd3c4a341970f08316d5ee5818bf9f58813875f87206bb62863f8ebc757c0"
+dependencies = [
+ "astro-format 0.8.0",
+ "fides",
+ "opis",
+ "rand 0.8.5",
 ]
 
 [[package]]

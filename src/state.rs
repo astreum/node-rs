@@ -1,26 +1,45 @@
-use astro_format::string;
-use crate::account::Account;
-use crate::Chain;
-use neutrondb::Store;
-use opis::Int;
+mod sync;
+
 use std::collections::BTreeMap;
 use std::error::Error;
 use std::sync::{Arc, Mutex};
 
+use crate::account::Account;
+use crate::accounts::Accounts;
+use crate::block::Block;
+use crate::Chain;
+use crate::transaction::Transaction;
+
+use astro_format::string;
+use neutrondb::Store;
+use opis::Int;
+use pulsar_network::{Client, Route};
+
+
 pub struct State {
-    pub accounts: Arc<Mutex<BTreeMap<[u8;32], [u8;32]>>>,
-    pub accounts_store: Arc<Mutex<Store>>
+    pub accounts: Arc<Mutex<Accounts>>,
+    pub blocks_store: Arc<Mutex<Store>>,
+    pub latest_block: Arc<Mutex<Block>>,
+    pub pending_transactions: Arc<Mutex<BTreeMap<[u8; 32], Transaction>>>,
+    pub network: Arc<Mutex<Client>>
+    
 }
 
 impl State {
 
+    pub fn bootstrap(&self) {}
+
     pub fn new(chain: &Chain) -> Result<Self, Box<dyn Error>> {
 
-        let mut accounts: BTreeMap<[u8;32], [u8;32]> = BTreeMap::new();
+        let mut accounts_details: BTreeMap<[u8;32], [u8;32]> = BTreeMap::new();
 
         let mut accounts_store = Store::new(&format!("accounts_{:?}", &chain))?;
 
+        let blocks_store = Store::new(&format!("blocks_{:?}", &chain))?;
+
         let stored_accounts = accounts_store.get_all()?;
+
+        let latest_block = Block::new(&chain);
 
         match stored_accounts.is_empty() {
             true => {
@@ -41,7 +60,7 @@ impl State {
                     &string::encode::bytes(&nova_account.to_bytes())
                 )?;
 
-                accounts.insert(nova_address, nova_account.hash());
+                accounts_details.insert(nova_address, nova_account.hash());
 
                 let stelar_account = Account::new();
                 
@@ -50,7 +69,7 @@ impl State {
                     &string::encode::bytes(&stelar_account.to_bytes())
                 )?;
 
-                accounts.insert(stelar_address, stelar_account.hash());
+                accounts_details.insert(stelar_address, stelar_account.hash());
 
 
             },
@@ -61,17 +80,36 @@ impl State {
 
                     let account = Account::from_bytes(&string::decode::bytes(&account)?)?;
 
-                    accounts.insert(address, account.hash());
+                    accounts_details.insert(address, account.hash());
 
                 }
             }
         };
 
+        let route = match chain {
+            Chain::Main => Route::Main,
+            Chain::Test => Route::Test
+        };
+
+        let seeders = vec![];
+        
+        let network = Client::new(false, route, seeders);
+
+        let accounts = Accounts {
+            details: accounts_details,
+            store: accounts_store
+        };
+
         Ok(State {
             accounts: Arc::new(Mutex::new(accounts)),
-            accounts_store: Arc::new(Mutex::new(accounts_store))
+            blocks_store: Arc::new(Mutex::new(blocks_store)),
+            latest_block: Arc::new(Mutex::new(latest_block)),
+            pending_transactions: Arc::new(Mutex::new(BTreeMap::new())),
+            network: Arc::new(Mutex::new(network))
         })
 
     }
+
+    pub fn validate(&self) {}
 
 }

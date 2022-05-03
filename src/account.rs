@@ -4,7 +4,7 @@ use opis::Int;
 use std::collections::BTreeMap;
 use std::error::Error;
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Account {
     pub balance: Int,
     pub counter: Int,
