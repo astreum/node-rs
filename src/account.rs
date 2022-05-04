@@ -1,3 +1,4 @@
+pub mod from_accounts;
 use astro_format::arrays;
 use fides::{hash, merkle_root};
 use opis::Int;

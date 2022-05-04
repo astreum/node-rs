@@ -1,3 +1,4 @@
+const NOVA_ADDRESS: [u8;32] = [0_u8;32];
 mod account;
 mod accounts;
 mod block;
@@ -42,7 +43,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let key_path = Path::new("./key.fides");
 
-    let _encrypted_private_key: Vec<u8> = match key_path.is_file() {
+    let encrypted_private_key: Vec<u8> = match key_path.is_file() {
         true => fs::read(key_path)?,
         false => {
             let new_private_key = ed25519::private_key();
@@ -59,8 +60,11 @@ fn main() -> Result<(), Box<dyn Error>> {
     state.sync();
 
     match flag {
-        Flag::Bootstrap => state.bootstrap(),
-        Flag::Validate => state.validate(),
+        Flag::Bootstrap => (),
+        Flag::Validate => {
+            let private_key = chacha20poly1305::decrypt(&password_key, &encrypted_private_key)?;
+            state.validate(private_key.try_into().unwrap())
+        },
         _ => ()
     }
 

@@ -31,11 +31,13 @@ impl State {
 
             drop(latest_block);
 
-            let next_block_message = Message::new(Context::Block, &next_block_number.to_bytes());
+            let next_block_message = Message::new(Context::BlockRequest, &next_block_number.to_bytes());
             
             let network = network_clone.lock().unwrap();
+
+            let nearest_peer = network.nearest_peer();
             
-            network.broadcast(next_block_message);
+            network.send(next_block_message, nearest_peer);
 
             let messages = network.messages();
 
@@ -137,6 +139,7 @@ impl State {
                                                 drop(network)
 
                                             },
+
                                             false => ()
                                         }
                                     },
@@ -145,7 +148,6 @@ impl State {
                             },
                             _ => ()
                         }
-    
                     },
 
                     Context::BlockRequest => {
@@ -202,31 +204,17 @@ impl State {
                                                 drop(network)
 
                                             },
-                                            
                                             false => ()
-                                        
                                         }
-                                    
                                     },
-                                    
                                     Some(_) => ()
-                                
                                 }
-                            
                             },
-                            
                             Err(_) => ()
-                        
                         }
-                    
                     }
-                
                 }
-            
             }
-        
         });
-    
     }
-
 }

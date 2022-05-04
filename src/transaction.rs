@@ -1,10 +1,12 @@
-mod body_hash;
+pub mod apply;
+pub mod body_hash;
 pub mod cancel;
-mod from_bytes;
-mod hash;
-mod new;
-mod to_bytes;
-mod verify;
+pub mod from_bytes;
+pub mod hash;
+pub mod new;
+pub mod receipt;
+pub mod to_bytes;
+pub mod verify;
 use opis::Int;
 
 #[derive(Clone, Debug)]

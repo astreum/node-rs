@@ -1,13 +1,13 @@
 use crate::account::Account;
 use crate::accounts::Accounts;
 use crate::block::Block;
+use crate::transaction::receipt::{Receipt, Status};
 use astro_format::string;
 use fides::{merkle_root, hash};
 use neutrondb::Store;
 use opis::Int;
 use std::collections::HashMap;
 use std::error::Error;
-use super::receipt::{Receipt, Status};
 
 impl Accounts {
 

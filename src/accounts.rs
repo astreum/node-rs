@@ -1,5 +1,4 @@
 mod apply_block;
-mod receipt;
 use neutrondb::Store;
 use std::collections::BTreeMap;
 

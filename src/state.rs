@@ -1,20 +1,18 @@
+pub mod nova;
 mod sync;
-
-use std::collections::BTreeMap;
-use std::error::Error;
-use std::sync::{Arc, Mutex};
-
+mod validate;
+use astro_format::string;
 use crate::account::Account;
 use crate::accounts::Accounts;
 use crate::block::Block;
 use crate::Chain;
 use crate::transaction::Transaction;
-
-use astro_format::string;
 use neutrondb::Store;
 use opis::Int;
 use pulsar_network::{Client, Route};
-
+use std::collections::BTreeMap;
+use std::error::Error;
+use std::sync::{Arc, Mutex};
 
 pub struct State {
     pub accounts: Arc<Mutex<Accounts>>,
@@ -26,8 +24,6 @@ pub struct State {
 }
 
 impl State {
-
-    pub fn bootstrap(&self) {}
 
     pub fn new(chain: &Chain) -> Result<Self, Box<dyn Error>> {
 
@@ -109,7 +105,5 @@ impl State {
         })
 
     }
-
-    pub fn validate(&self) {}
 
 }
