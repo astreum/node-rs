@@ -55,57 +55,30 @@ impl State {
                             
                             Ok(block) => {
 
+                                let mut accounts = accounts_clone.lock().unwrap();
+
                                 let latest_block = latest_block_clone.lock().unwrap();
 
-                                let latest_solar_price = latest_block.solar_price.clone();
+                                match block.apply(&mut accounts, &latest_block) {
 
-                                let current_solar_price = if latest_block.solar_used > Int::from_decimal("750000000") {
-                                    latest_solar_price + Int::one()
-                                } else if latest_block.solar_used < Int::from_decimal("250000000") {
-                                    latest_solar_price - Int::one()
-                                } else {
-                                    latest_solar_price
-                                };
+                                    Ok(_) => {
 
-                                if [
-                                    block.previous_block_hash == latest_block.hash(),
-                                    block.solar_price == current_solar_price
-                                    // check validator selection
-                                ].iter().all(|&x| x) {
+                                        let network = network_clone.lock().unwrap();
 
-                                    let mut accounts = accounts_clone.lock().unwrap();
-                                        
-                                    match accounts.apply_block(&block) {
-    
-                                        Ok(updated) => {
+                                        network.broadcast(message);
 
-                                            for (address, account) in updated {
+                                        let mut blocks_store = blocks_store_clone.lock().unwrap();
 
-                                                let address_string = string::encode::bytes(&address);
+                                        let block_key = string::encode::bytes(&block.number.to_bytes());
 
-                                                let account_bytes = account.to_bytes();
+                                        let block_value = string::encode::bytes(&block.to_bytes());
 
-                                                let account_string = string::encode::bytes(&account_bytes);
+                                        blocks_store.put(&block_key, &block_value).unwrap();
 
-                                                accounts.store.put(&address_string, &account_string).unwrap();
+                                    },
+                                    
+                                    Err(_) => ()
 
-                                                accounts.details.insert(address, account.hash());
-
-                                            }
-
-                                            let mut blocks_store = blocks_store_clone.lock().unwrap();
-
-                                            let block_number_string = string::encode::bytes(&block.number.to_bytes());
-
-                                            let block_bytes = block.to_bytes();
-
-                                            let block_string = string::encode::bytes(&block_bytes);
-
-                                            blocks_store.put(&block_number_string, &block_string).unwrap();
-
-                                        },
-                                        _ => ()
-                                    }
                                 }
                             },
                             _ => ()

@@ -1,16 +1,21 @@
+use crate::STELAR_ADDRESS;
 use std::{collections::BTreeMap, time::SystemTime};
+use astro_format::string;
 use opis::Int;
 
-use crate::block::Block;
+use crate::{block::Block, NOVA_ADDRESS, accounts::Accounts, account::Account};
 
-pub fn select(latest_block: &Block, stakes: BTreeMap<[u8;32], [u8;32]>) -> [u8;32] {
+pub fn validator_selection(accounts: &Accounts, latest_block: &Block, target_time: &Int) -> [u8;32] {
 
-    let mut current_time = SystemTime::now()
-        .duration_since(SystemTime::UNIX_EPOCH)
-        .unwrap()
-        .as_secs();
+    let nova_address_string = string::encode::bytes(&NOVA_ADDRESS);
+
+    let nova_account_string = accounts.store.get(&nova_address_string).unwrap();
+
+    let nova_account_bytes = string::decode::bytes(&nova_account_string).unwrap();
+
+    let nova_account = Account::from_bytes(&nova_account_bytes).unwrap();
         
-    let time_diff = &Int::from_bytes(&current_time.to_be_bytes()) - &latest_block.time;
+    let time_diff = target_time - &latest_block.time;
 
     let three = Int::from_decimal("3");
 
@@ -19,31 +24,32 @@ pub fn select(latest_block: &Block, stakes: BTreeMap<[u8;32], [u8;32]>) -> [u8;3
     } else {
         Int::zero()
     };
+    
+    STELAR_ADDRESS
 
-    [0_u8;32]
 }
 
-pub fn solar(price: &Int, used: &Int) -> Int {
+pub fn next_solar_price(latest_block: &Block) -> Int {
 
-    if used > &Int::from_decimal("750000000") {
+    if latest_block.solar_used > Int::from_decimal("900000000000") {
                             
-        price + &Int::one()
+        &latest_block.solar_price + &Int::one()
     
-    } else if used < &Int::from_decimal("250000000") {
+    } else if latest_block.solar_used < Int::from_decimal("100000000000") {
         
-        if price == &Int::one() {
+        if latest_block.solar_price == Int::one() {
             
-            price.clone()
+            latest_block.solar_price.clone()
         
         } else {
             
-            price - &Int::one()
+            &latest_block.solar_price - &Int::one()
         
         }
 
     } else {
         
-        price.clone()
+        latest_block.solar_price.clone()
     
     }
     

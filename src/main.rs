@@ -1,3 +1,4 @@
+const STELAR_ADDRESS: [u8;32] = [0_u8;32];
 const NOVA_ADDRESS: [u8;32] = [0_u8;32];
 mod account;
 mod accounts;

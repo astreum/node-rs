@@ -1,4 +1,3 @@
-mod apply_block;
 use neutrondb::Store;
 use std::collections::BTreeMap;
 

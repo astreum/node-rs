@@ -5,30 +5,22 @@ use opis::Int;
 use std::{collections::HashMap, error::Error};
 use super::{receipt::{Receipt, Status}, Transaction};
 
-pub struct ApplyTxArg<'a> {
-    pub accounts_store: &'a Store,
-    pub latest_block: &'a Block,
-    pub solar_price: &'a Int
-}
-
-pub struct ApplyTxRes {
-    pub accounts: HashMap<[u8;32], Account>,
-    pub receipt: Receipt
-}
-
 impl Transaction {
 
-    pub fn apply(&self, apply_tx_arg: ApplyTxArg) -> Result<ApplyTxRes, Box<dyn Error>> {
+    pub fn apply(
+        &self,
+        accounts_store: &Store,
+        changed_accounts: &mut HashMap<[u8;32], Account>,
+        solar_price: &Int
+    ) -> Result<Receipt, Box<dyn Error>> {
 
-        let mut accounts = HashMap::new();
-
-        if &self.solar_price >= &apply_tx_arg.solar_price {
+        if &self.solar_price >= solar_price {
 
             let self_cost = Int::from_decimal("1000");
 
             if self.solar_limit >= self_cost {
 
-                match Account::from_accounts(&self.sender, &accounts, &apply_tx_arg.accounts_store) {
+                match Account::from_accounts(&self.sender, &changed_accounts, accounts_store) {
 
                     Some(mut sender) => {
     
@@ -36,7 +28,7 @@ impl Transaction {
     
                             let mut solar_used = Int::zero();
     
-                            let self_fee =  &self_cost * &apply_tx_arg.solar_price;
+                            let self_fee =  &self_cost * solar_price;
     
                             sender.balance -= self_fee;
     
@@ -44,7 +36,7 @@ impl Transaction {
 
                             if self.sender != self.recipient {
     
-                                match Account::from_accounts(&self.recipient, &accounts, &apply_tx_arg.accounts_store) {
+                                match Account::from_accounts(&self.recipient, &changed_accounts, &accounts_store) {
         
                                     Some(mut recipient) => {
         
@@ -54,21 +46,17 @@ impl Transaction {
         
                                             recipient.balance += self.value.clone();
 
-                                            accounts.insert(self.sender, sender);
+                                            changed_accounts.insert(self.sender, sender);
 
-                                            accounts.insert(self.recipient, recipient);
+                                            changed_accounts.insert(self.recipient, recipient);
         
-                                            let receipt = Receipt { solar_used, status: Status::Accepted };
-
-                                            Ok(ApplyTxRes { accounts, receipt })
+                                            Ok(Receipt { solar_used, status: Status::Accepted })
                                             
                                         } else {
 
-                                            accounts.insert(self.sender, sender);
+                                            changed_accounts.insert(self.sender, sender);
         
-                                            let receipt = Receipt { solar_used, status: Status::BalanceError };
-
-                                            Ok(ApplyTxRes { accounts, receipt })
+                                            Ok(Receipt { solar_used, status: Status::BalanceError })
         
                                         }
                                     },
@@ -81,7 +69,7 @@ impl Transaction {
                                         
                                         if remaining_self_solar >= account_creation_cost {
         
-                                            let account_creation_fee = &account_creation_cost * &apply_tx_arg.solar_price;
+                                            let account_creation_fee = &account_creation_cost * solar_price;
                                             
                                             if sender.balance >= account_creation_fee {
         
@@ -97,41 +85,33 @@ impl Transaction {
 
                                                     recipient.balance = self.value.clone();
 
-                                                    accounts.insert(self.sender, sender);
+                                                    changed_accounts.insert(self.sender, sender);
 
-                                                    accounts.insert(self.recipient, recipient);
+                                                    changed_accounts.insert(self.recipient, recipient);
         
-                                                    let receipt = Receipt { solar_used, status: Status::Accepted };
-
-                                                    Ok(ApplyTxRes { accounts, receipt })
+                                                    Ok(Receipt { solar_used, status: Status::Accepted })
         
                                                 } else {
                                                     
-                                                    accounts.insert(self.sender, sender);
+                                                    changed_accounts.insert(self.sender, sender);
 
-                                                    let receipt = Receipt { solar_used, status: Status::BalanceError };
-        
-                                                    Ok(ApplyTxRes { accounts, receipt })
+                                                    Ok(Receipt { solar_used, status: Status::BalanceError })
         
                                                 }
         
                                             } else {
 
-                                                accounts.insert(self.sender, sender);
+                                                changed_accounts.insert(self.sender, sender);
         
-                                                let receipt = Receipt { solar_used, status: Status::BalanceError };
-        
-                                                Ok(ApplyTxRes { accounts, receipt })
+                                                Ok(Receipt { solar_used, status: Status::BalanceError })
         
                                             }
         
                                         }  else {
 
-                                            accounts.insert(self.sender, sender);
+                                            changed_accounts.insert(self.sender, sender);
         
-                                            let receipt = Receipt { solar_used, status: Status::SolarError };
-        
-                                            Ok(ApplyTxRes { accounts, receipt })
+                                            Ok(Receipt { solar_used, status: Status::SolarError })
         
                                         } 
                                     }
