@@ -1,8 +1,8 @@
 use astro_format::string;
-use crate::block::Block;
+use crate::blocks::Block;
 use crate::State;
-use crate::transaction::Transaction;
-use crate::transaction::cancel::CancelTransaction;
+use crate::transactions::Transaction;
+use crate::transactions::cancel::CancelTransaction;
 use opis::Int;
 use pulsar_network::{Message, Context};
 use std::{sync::Arc, thread};
@@ -15,13 +15,15 @@ impl State {
 
         let accounts_clone = Arc::clone(&self.accounts);
 
+        let accounts_store_clone = Arc::clone(&self.accounts_store);
+
         let blocks_store_clone = Arc::clone(&self.blocks_store);
+
+        let latest_block_clone = Arc::clone(&self.latest_block);
 
         let pending_transactions_clone = Arc::clone(&self.pending_transactions);
 
         let network_clone = Arc::clone(&self.network);
-
-        let latest_block_clone = Arc::clone(&self.latest_block);
 
         thread::spawn(move || {
 
@@ -57,9 +59,11 @@ impl State {
 
                                 let mut accounts = accounts_clone.lock().unwrap();
 
+                                let mut accounts_store = accounts_store_clone.lock().unwrap();
+
                                 let latest_block = latest_block_clone.lock().unwrap();
 
-                                match block.apply(&mut accounts, &latest_block) {
+                                match block.apply(&mut accounts, &mut accounts_store, &latest_block) {
 
                                     Ok(_) => {
 

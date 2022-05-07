@@ -1,12 +1,11 @@
 const STELAR_ADDRESS: [u8;32] = [0_u8;32];
 const NOVA_ADDRESS: [u8;32] = [0_u8;32];
-mod account;
 mod accounts;
-mod block;
+mod blocks;
 mod server;
 mod state;
-mod transaction;
-use account::Account;
+mod transactions;
+use accounts::Account;
 use astro_format::string;
 use fides::{hash, chacha20poly1305, ed25519};
 use server::{Request, Response};
@@ -85,13 +84,13 @@ fn main() -> Result<(), Box<dyn Error>> {
 
         if request.method == Some("GET".to_string()) && request.path == Some("/accounts".to_string()) {
 
-            let accounts_clone = Arc::clone(&state.accounts);
+            let accounts_store_clone = Arc::clone(&state.accounts_store);
 
-            let accounts = accounts_clone.lock().unwrap();
+            let accounts_store = accounts_store_clone.lock().unwrap();
 
             let mut contents: String = String::from("{");
 
-            for (address, account) in accounts.store.get_all().unwrap() {
+            for (address, account) in accounts_store.get_all().unwrap() {
 
                 let account_bytes = string::decode::bytes(&account)?;
 

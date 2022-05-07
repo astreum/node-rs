@@ -1,4 +1,4 @@
-use crate::{block::Block, Chain};
+use crate::{blocks::Block, Chain};
 use opis::Int;
 
 impl Block {

@@ -1,4 +1,4 @@
-use crate::block::Block;
+use crate::blocks::Block;
 use fides::{merkle_root, hash};
 
 impl Block {

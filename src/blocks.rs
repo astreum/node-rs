@@ -1,12 +1,13 @@
-pub mod apply;
+mod apply;
 mod body_hash;
-pub mod create;
+mod create;
 mod from_bytes;
 mod hash;
 mod new;
+mod next_solar_price;
 mod to_bytes;
 mod verify;
-use crate::transaction::Transaction;
+use crate::transactions::Transaction;
 use opis::Int;
 
 #[derive(Clone, Debug)]

@@ -1,20 +1,17 @@
-use std::collections::{BTreeMap, HashMap};
-
+use crate::accounts::Account;
+use crate::blocks::Block;
+use crate::transactions::receipt::Receipt;
+use crate::transactions::Transaction;
 use fides::{merkle_root, hash, ed25519};
+use neutrondb::Store;
 use opis::Int;
-
-use crate::account::Account;
-use crate::accounts::Accounts;
-use crate::transaction::receipt::Receipt;
-use crate::state::nova;
-use crate::transaction::Transaction;
-
-use super::Block;
+use std::collections::{BTreeMap, HashMap};
 
 impl Block {
 
     pub fn create(
-        accounts: &Accounts,
+        accounts: &BTreeMap<[u8;32], [u8;32]>,
+        accounts_store: &Store,
         latest_block: &Block,
         pending_transactions: &BTreeMap<[u8;32],Transaction>,
         private_key: &[u8;32],
@@ -22,7 +19,7 @@ impl Block {
         target_time: &u64
     ) -> (HashMap<[u8;32], Account>, Block) {
 
-        let solar_price = nova::next_solar_price(&latest_block);
+        let solar_price = latest_block.next_solar_price();
 
         let mut solar_used = Int::zero();
 
@@ -34,7 +31,7 @@ impl Block {
 
         for tx in pending_transactions.iter() {
             
-            match tx.1.apply(&accounts.store, &mut changed_accounts, &solar_price) {
+            match tx.1.apply(&accounts_store, &mut changed_accounts, &solar_price) {
 
                 Ok(receipt) => {
 
@@ -51,12 +48,21 @@ impl Block {
             
         }
 
-        let validator = Account::from_accounts(public_key, &changed_accounts, &accounts.store);
+        let mut validator_account = Account::from_accounts(public_key, &changed_accounts, &accounts_store).unwrap();
 
-        let receipts_hash = merkle_root(receipts.iter().map(|x| x.hash()).collect());
+        validator_account.balance += Int::from_decimal("1000000000000");
+
+        changed_accounts.insert(*public_key, validator_account);
+
+        let receipts_hash = merkle_root(
+            receipts
+                .iter()
+                .map(|x| x.hash())
+                .collect()
+        );
 
         let accounts_hash = merkle_root(
-            accounts.details
+            accounts
                 .iter()
                 .map(|x| {
 
@@ -84,7 +90,7 @@ impl Block {
             solar_used,
             time: Int::from_bytes(&target_time.to_be_bytes()),
             transactions,
-            validator: public_key.clone()
+            validator: *public_key
         };
 
         block.signature = ed25519::sign(&block.hash(), &private_key);

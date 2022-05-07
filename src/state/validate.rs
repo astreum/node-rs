@@ -1,8 +1,8 @@
 use astro_format::string;
-use fides::{ed25519};
+use fides::ed25519;
 use opis::Int;
 use pulsar_network::{Message, Context};
-use crate::{state::nova, block::Block};
+use crate::{state::nova, blocks::Block};
 
 use super::State;
 use std::{sync::Arc, thread, time::{SystemTime, Instant, Duration}};
@@ -16,6 +16,8 @@ impl State {
         let public_key = ed25519::public_key(&private_key);
 
         let accounts_clone = Arc::clone(&self.accounts);
+
+        let accounts_store_clone = Arc::clone(&self.accounts_store);
 
         let blocks_store_clone = Arc::clone(&self.blocks_store);
 
@@ -33,11 +35,13 @@ impl State {
 
                 if now.elapsed().as_secs() > 1 {
 
+                    let mut accounts = accounts_clone.lock().unwrap();
+
+                    let mut accounts_store = accounts_store_clone.lock().unwrap();
+
                     let mut blocks_store = blocks_store_clone.lock().unwrap();
 
                     let mut latest_block = latest_block_clone.lock().unwrap();
-                    
-                    let mut accounts = accounts_clone.lock().unwrap();
 
                     let mut current_time = SystemTime::now()
                             .duration_since(SystemTime::UNIX_EPOCH)
@@ -46,7 +50,7 @@ impl State {
 
                     let target_time = current_time + (current_time % 3);
 
-                    let validator = nova::validator_selection(&accounts, &latest_block, &Int::from_bytes(&target_time.to_be_bytes()));
+                    let validator = nova::validator_selection(&accounts_store, &latest_block, &Int::from_bytes(&target_time.to_be_bytes()));
 
                     if validator == public_key {
 
@@ -54,6 +58,7 @@ impl State {
 
                         let (changed_accounts, block) = Block::create(
                             &accounts,
+                            &accounts_store,
                             &latest_block,
                             &pending_transactions,
                             &private_key,
@@ -87,13 +92,13 @@ impl State {
 
                             for (address, account) in changed_accounts {
 
-                                accounts.details.insert(address, account.hash());
+                                accounts.insert(address, account.hash());
 
                                 let account_key = string::encode::bytes(&address);
 
                                 let account_value = string::encode::bytes(&account.to_bytes());
                                 
-                                accounts.store.put(&account_key, &account_value).unwrap();
+                                accounts_store.put(&account_key, &account_value).unwrap();
 
                             }
                             

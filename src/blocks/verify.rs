@@ -1,4 +1,4 @@
-use crate::block::Block;
+use crate::blocks::Block;
 use fides::ed25519;
 use opis::Int;
 

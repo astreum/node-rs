@@ -1,4 +1,4 @@
-use crate::transaction::Transaction;
+use crate::transactions::Transaction;
 use fides::{merkle_root, hash};
 
 impl Transaction {

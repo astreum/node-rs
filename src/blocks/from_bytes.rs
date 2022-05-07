@@ -1,5 +1,6 @@
 use astro_format::arrays;
-use crate::{block::Block, transaction::Transaction};
+use crate::blocks::Block;
+use crate::transactions::Transaction;
 use std::error::Error;
 use opis::Int;
 

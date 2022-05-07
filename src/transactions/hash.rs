@@ -1,7 +1,7 @@
-use crate::block::Block;
+use crate::transactions::Transaction;
 use fides::{merkle_root, hash};
 
-impl Block {
+impl Transaction {
 
     pub fn hash(&self) -> [u8; 32] {
         merkle_root(vec![
