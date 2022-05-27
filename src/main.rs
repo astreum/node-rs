@@ -1,4 +1,4 @@
-const STELAR_ADDRESS: [u8;32] = [0_u8;32];
+const STELAR_ADDRESS: [u8;32] = [1_u8;32];
 const NOVA_ADDRESS: [u8;32] = [0_u8;32];
 mod accounts;
 mod blocks;
@@ -10,8 +10,9 @@ use astro_format::string;
 use fides::{hash, chacha20poly1305, ed25519};
 use server::{Request, Response};
 use state::State;
-use std::io::{Read, Write};
-use std::net::TcpListener;
+use std::fs::File;
+use std::io::{Read, Write, BufReader, BufRead};
+use std::net::{TcpListener, SocketAddr};
 use std::sync::Arc;
 use std::{env, fs, fmt};
 use std::error::Error;
@@ -29,11 +30,29 @@ impl fmt::Debug for Chain {
 }
 
 #[derive(Debug)]
-enum Flag { Bootstrap, Empty, Validate }
+pub enum Flag { Bootstrap, Empty, Validate }
 
 fn main() -> Result<(), Box<dyn Error>> {
 
-    println!("started ...");
+    println!(r###"
+
+*      .       *    .               *     .    *          *
+.  .        .           *    .     *  .            .
+	*   .      *           *               * .       *    .   .
+	.                     *    .    * .            .         .   .   .
+
+ .vvv.    .vvv.  .vvvvv.  .vvvv.   .vvvv.  .v   v.   .vvv.    .vvv.
+.v   v.  .v         v     .v   v.  .v      .v   v.  .v   v.  .v
+.vvvvv.   .vv.      v     .vvvv.   .vvv.   .v   v.  .v   v.   .vv.
+.v   v.      v.     v     .v  v.   .v      .v   v.  .v   v.      v.
+.v   v.  .vvv.      v     .v   v.  .vvvv.   .vvv.    .vvv.   .vvv.   .v.
+
+Astreuos Node
+node-rs v0.0.1
+
+powered by Stelar Labs
+
+    "###);
     
     let args: Vec<String> = env::args().collect();
 
@@ -43,34 +62,50 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     let key_path = Path::new("./key.fides");
 
-    let encrypted_private_key: Vec<u8> = match key_path.is_file() {
-        true => fs::read(key_path)?,
+    let private_key: [u8;32] = match key_path.is_file() {
+
+        true => {
+            let encrypted_key = fs::read(key_path)?;
+            chacha20poly1305::decrypt(&password_key, &encrypted_key)?.try_into().unwrap()
+        },
+        
         false => {
-            let new_private_key = ed25519::private_key();
-            let encrypted_key = chacha20poly1305::encrypt(&password_key, &new_private_key)?;
+            let private_key = ed25519::private_key();
+            let encrypted_key = chacha20poly1305::encrypt(&password_key, &private_key)?;
             fs::write(key_path, &encrypted_key)?;
-            encrypted_key
+            private_key
         }
+
     };
 
     println!("key okay! ...");
+    
+    let seeders_file = File::open("./seeders.txt")?;
 
-    let state = State::new(&chain)?;
+    let mut seeders = Vec::new();
+    
+    for seeder in BufReader::new(seeders_file).lines() {
+
+        let seeder = seeder?;
+        
+        let socket: SocketAddr = seeder.parse()?;
+
+        seeders.push(socket)
+
+    }
+
+    let state = State::new(&chain, &flag, seeders)?;
 
     state.sync();
 
     match flag {
-        Flag::Bootstrap => (),
-        Flag::Validate => {
-            let private_key = chacha20poly1305::decrypt(&password_key, &encrypted_private_key)?;
-            state.validate(private_key.try_into().unwrap())
-        },
+        Flag::Validate => state.validate(private_key),
         _ => ()
     }
 
     let listener = TcpListener::bind("127.0.0.1:7878")?;
 
-    println!("serving terminal api ...");
+    println!("serving terminals ...");
 
     for stream in listener.incoming() {
 

@@ -1,6 +1,6 @@
 use crate::accounts::Account;
 use crate::blocks::Block;
-use crate::Chain;
+use crate::{Chain, Flag, STELAR_ADDRESS, NOVA_ADDRESS};
 use crate::state::State;
 use astro_format::string;
 use neutrondb::Store;
@@ -8,11 +8,12 @@ use opis::Int;
 use pulsar_network::{Route, Client};
 use std::collections::BTreeMap;
 use std::error::Error;
+use std::net::SocketAddr;
 use std::sync::{Arc, Mutex};
 
 impl State {
 
-    pub fn new(chain: &Chain) -> Result<Self, Box<dyn Error>> {
+    pub fn new(chain: &Chain, flag: &Flag, seeders: Vec<SocketAddr>) -> Result<Self, Box<dyn Error>> {
 
         let mut accounts: BTreeMap<[u8;32], [u8;32]> = BTreeMap::new();
 
@@ -27,33 +28,29 @@ impl State {
         match stored_accounts.is_empty() {
             
             true => {
-
-                let nova_address = [0_u8;32];
-
-                let stelar_address = [1_u8;32];
                 
                 let mut nova_account = Account::new();
 
                 nova_account.storage.insert(
-                    stelar_address,
+                    STELAR_ADDRESS,
                     Int::one().to_ext_bytes(32).try_into().unwrap()
                 );
 
                 accounts_store.put(
-                    &string::encode::bytes(&nova_address),
+                    &string::encode::bytes(&NOVA_ADDRESS),
                     &string::encode::bytes(&nova_account.to_bytes())
                 )?;
 
-                accounts.insert(nova_address, nova_account.hash());
+                accounts.insert(NOVA_ADDRESS, nova_account.hash());
 
                 let stelar_account = Account::new();
                 
                 accounts_store.put(
-                    &string::encode::bytes(&stelar_address),
+                    &string::encode::bytes(&STELAR_ADDRESS),
                     &string::encode::bytes(&stelar_account.to_bytes())
                 )?;
 
-                accounts.insert(stelar_address, stelar_account.hash());
+                accounts.insert(STELAR_ADDRESS, stelar_account.hash());
 
 
             },
@@ -79,9 +76,12 @@ impl State {
             Chain::Test => Route::Test
         };
 
-        let seeders = vec![];
+        let bootstrap = match flag {
+            Flag::Bootstrap => true,
+            _ => false
+        };
         
-        let network = Client::new(false, route, seeders);
+        let network = Client::new(bootstrap, route, seeders);
 
         Ok(State {
             accounts: Arc::new(Mutex::new(accounts)),
