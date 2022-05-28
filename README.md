@@ -5,16 +5,12 @@ Official Node for the Astreum Blockchain
 ## Commands
 
 ```
-new account [password]
+new [password]
 
-accounts
-
-start [chain]
+serve [chain]
 
 validate [chain] [address] [password]
 
-bootstrap [chain]
-
 ```
 
-2022-05-27
+2022-05-28

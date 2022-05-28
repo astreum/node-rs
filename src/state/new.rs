@@ -10,10 +10,13 @@ use std::collections::BTreeMap;
 use std::error::Error;
 use std::net::SocketAddr;
 use std::sync::{Arc, Mutex};
+use std::io::{Read, Write, BufReader, BufRead};
+
+use std::fs::File;
 
 impl State {
 
-    pub fn new(chain: &Chain, flag: &Flag, seeders: Vec<SocketAddr>) -> Result<Self, Box<dyn Error>> {
+    pub fn new(bootstrap: bool, chain: &Chain) -> Result<Self, Box<dyn Error>> {
 
         let mut accounts: BTreeMap<[u8;32], [u8;32]> = BTreeMap::new();
 
@@ -76,10 +79,19 @@ impl State {
             Chain::Test => Route::Test
         };
 
-        let bootstrap = match flag {
-            Flag::Bootstrap => true,
-            _ => false
-        };
+        let seeders_file = File::open("./seeders.txt")?;
+
+        let mut seeders = Vec::new();
+        
+        for seeder in BufReader::new(seeders_file).lines() {
+
+            let seeder = seeder?;
+            
+            let socket: SocketAddr = seeder.parse()?;
+
+            seeders.push(socket)
+
+        }
         
         let network = Client::new(bootstrap, route, seeders);
 
