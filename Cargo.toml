@@ -1,14 +1,16 @@
 [package]
-name = "rust-astreuos"
-version = "0.0.1"
-edition = "2018"
+name = "node-rs"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-astro-notation = "3.1.0"
-neutrondb = "2.2.1"
-rand = "0.8.4"
-sha3 = "0.9.1"
-ring = "0.16.20"
-fides = "2.0.0"
-pulsar-network = "0.5.3"
-opis = "3.0.7"
+opis = "5.0.2"
+astro-format = "1.1.0"
+# fides = "3.0.3"
+fides = { path = "../fides-rs"}
+hex = "0.4.3"
+# neutrondb = "5.0.3"
+neutrondb = { path = "../neutrondb-rs"}
+rand = "0.8.5"

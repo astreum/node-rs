@@ -1,30 +1,44 @@
-```
+# Astreum Node
 
-.       *    .               *     .    *          *
-    .        .           *    .     *  .            .
+```
+    *      .       *    .               *     .    *          *
+    .  .        .           *    .     *  .            .
         *   .      *           *               * .       *    .   .
-    .                     *    .    * .            .         .   .   .
+        .                     *    .    * .            .         .   .   .
 
- .vvv.    .vvv.  .vvvvv.  .vvvv.   .vvvv.  .v   v.   .vvv.    .vvv.
-.v   v.  .v         v     .v   v.  .v      .v   v.  .v   v.  .v
-.vvvvv.   .vv.      v     .vvvv.   .vvv.   .v   v.  .v   v.   .vv.
-.v   v.      v.     v     .v  v.   .v      .v   v.  .v   v.      v.
-.v   v.  .vvv.      v     .v   v.  .vvvv.   .vvv.    .vvv.   .vvv.   .v.
-
-Rust Astreuos
-version 0.0.1
-
+     .vvv.    .vvv.  .vvvvv.  .vvvv.   .vvvv.  .v   v.  .v.     .v.
+    .v   v.  .v         v     .v   v.  .v      .v   v.  .v v   v v.
+    .vvvvv.   .vv.      v     .vvvv.   .vvv.   .v   v.  .v  v v  v.
+    .v   v.      v.     v     .v  v.   .v      .v   v.  .v   v   v.
+    .v   v.  .vvv.      v     .v   v.  .vvvv.   .vvv.   .v       v.  .v.
+    
+    Node v0.0.1
 ```
 
-This is the Official Node for the Astreuos Blockchain.
+## About
 
-## Features
+This is the Official Node for the Astreum Blockchain.
 
-- wallet creation
-- wallet recovery
-- view blockchain accounts
-- send and cancel transactions
-- view nova stakes
-- blockchain validation
+## Usage
 
-2022-03-29
+```
+    account new                                                 create & store a new private key
+
+    account view [chain] [address]                              shows account information from local & peers 
+
+    transaction new [chain] [address] [recipient] [value]       create, sign & submit a transaction     
+
+    block view [chain] [number]                                 shows block information from local & peers
+
+    stake fund [chain] [address] [value]                        create, sign & submit stake funding transaction
+
+    stake withdraw [chain] [address] [value]                    create, sign & submit stake withdrawl transaction
+
+    stake view [chain] [address]                                shows staking information from local & peers 
+
+    validate [chain] [address]                                  create, sign & submit blocks
+
+    sync [chain]                                                get new blocks & update accounts
+```
+
+Copyright 12022 HE Astreum Foundation

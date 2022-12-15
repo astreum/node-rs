@@ -1,232 +1,145 @@
+use std::{error::Error, collections::BTreeMap};
 
-use astro_notation::list;
-use crate::merkle_tree_hash;
-use fides::hash;
-use opis::Int;
-use std::collections::HashMap;
-use std::str;
-use std::convert::TryInto;
-pub mod hashing;
+use opis::Integer;
+use fides::merkle_tree;
+use fides::hash::Blake3Hash;
+use fides::hash::blake_3;
 
-#[derive(Clone, Debug)]
+#[derive(Clone,Debug)]
 pub struct Account {
-    pub hash: [u8; 32],
-    pub balance: Int,
-    pub counter: Int,
-    pub storage: HashMap<[u8; 32], HashMap<[u8; 32], [u8; 32]>>,
+    pub balance: Integer,
+    pub counter: Integer,
+    pub storage: BTreeMap<[u8; 32], [u8; 32]>,
     pub storage_hash: [u8; 32]
 }
 
 impl Account {
 
-    pub fn new(value: &Int) -> Self {
-        
-        let mut res = Account {
-            hash: [0_u8; 32],
-            balance: value.clone(),
-            counter: Int::zero(),
-            storage: HashMap::new(),
+    pub fn new() -> Account {
+        Account {
+            balance: Integer::zero(),
+            counter: Integer::zero(),
+            storage: BTreeMap::new(),
             storage_hash: [0_u8; 32]
-        };
+        }
+    }
 
-        res.hash = res.hash();
+    pub fn increase_balance(&mut self, amount: &Integer) {
 
-        res
+        self.balance += amount 
 
     }
 
-    pub fn hash(&self) -> [u8; 32] {
-        merkle_tree_hash(vec![
-            hash(&self.balance.to_ext_bytes(32)),
-            hash(&self.counter.to_ext_bytes(32)),
-            self.storage_hash
-        ])
-    }
+    pub fn remove_balance(&mut self, amount:&Integer) -> Result<(), Box<dyn Error>> {
 
-    pub fn storage_hash(&self) -> [u8; 32] {
+        if &self.balance >= amount {
 
-        if self.storage.is_empty() {
-            [0_u8; 32]
+            self.balance -= amount;
+
+            Ok(())
+
         } else {
 
-            let mut hashes = self.storage
-                .iter()
-                .map(|x| (x.0, store_hash(x.1)))
-                .collect::<Vec<_>>();
+            Err("Not enough balance!")?
 
-            hashes.sort_by_key(|k| k.0);
-
-            merkle_tree_hash(
-                hashes
-                .iter()
-                .map(|x| merkle_tree_hash(
-                    vec![
-                        hash(&x.0.to_vec()),
-                        x.1
-                    ]
-                ))
-                .collect::<Vec<_>>()
-            )
-        
         }
     }
 
-    pub fn from_astro(input: &str) -> Self {
-        
-        let details_array = list::as_bytes(&input);
-        
-        let balance: Int = Int::from_bytes(&details_array[0]);
+    pub fn update_counter(&mut self) {
 
-        let counter: Int = Int::from_bytes(&details_array[1]);
-
-        let mut acc: Account = Account {
-            hash: [0_u8; 32],
-            balance: balance,
-            counter: counter,
-            storage: HashMap::new(),
-            storage_hash: [0_u8; 32]
-        };
-
-        if details_array.len() == 3 {
-
-            let stores_array = list::as_bytes(str::from_utf8(&details_array[2]).unwrap());
-            
-            for store in stores_array {
-
-                let store_array = list::as_bytes(str::from_utf8(&store).unwrap());
-
-                let store_id: [u8; 32] = store_array[0].clone().try_into().unwrap();
-
-                let records = list::as_bytes(str::from_utf8(&store_array[1]).unwrap());
-                
-                let mut store_map: HashMap<[u8; 32], [u8; 32]> = HashMap::new();
-
-                for record in records {
-
-                    let key_and_value = list::as_bytes(str::from_utf8(&record).unwrap());
-
-                    let key: [u8; 32] = key_and_value[0].clone().try_into().unwrap();
-
-                    let value: [u8; 32] = key_and_value[1].clone().try_into().unwrap();
-
-                    store_map.insert(key, value);
-                
-                }
-
-                acc.storage.insert(store_id, store_map);
-
-            }
-
-            acc.storage_hash = acc.storage_hash();
-
-        }
-
-        acc.hash = acc.hash();
-
-        acc
+        self.counter += Integer::one()
 
     }
-    
-    pub fn to_astro(&self) -> String {
 
-        let mut balance_counter_storage = vec![
-            self.balance.to_bytes(),
-            self.counter.to_bytes()
+    pub fn hash(&self) -> [u8;32] {
+
+        let details: [Vec<u8>; 3] = [
+            (&self.balance).into(),
+            (&self.counter).into(),
+            self.storage_hash.into()
         ];
 
-        let mut stores: Vec<String> = Vec::new();
+        let root: Blake3Hash = merkle_tree::root_from_owned(&details);
 
-        for store in &self.storage {
+        root.into()
+        
+    }
 
-            let mut keys_and_values: Vec<String> = Vec::new();
+    pub fn storage_hash(&self) -> [u8;32] {
 
-            for record in store.1 {
+        let storage: Vec<Vec<u8>> = self.storage
+            .iter()
+            .map(|x| [blake_3(x.0), blake_3(x.1)].concat())
+            .collect();
+        
+        let root: Blake3Hash = merkle_tree::root_from_owned(&storage);
 
-                let key_and_value: String = list::from_bytes(vec![record.0.to_vec(), record.1.to_vec()]);
+        root.into()
 
-                keys_and_values.push(key_and_value)
+    }
 
+    pub fn update_storage_hash(&mut self) {
+
+        self.storage_hash = self.storage_hash()
+
+    }
+
+}
+
+impl Into<Vec<u8>> for Account {
+
+    fn into(self) -> Vec<u8> {
+
+        let storage_bytes: Vec<Vec<u8>> = self.storage
+            .into_iter()
+            .map(|x| astro_format::encode(&[&x.0, &x.1]))
+            .collect();
+        
+        astro_format::encode_vec(&[
+            self.balance.into(),
+            self.counter.into(),
+            astro_format::encode_vec(&storage_bytes)
+        ])
+
+    }
+    
+}
+
+impl TryFrom<&[u8]> for Account {
+    fn try_from(arg: &[u8]) -> Result<Self, Box<dyn Error>> {    
+        let decoded_account = astro_format::decode(arg)?;
+        if decoded_account.len() == 3 {
+            let decoded_storage = astro_format::decode(decoded_account[2])?;
+            let mut storage = BTreeMap::new();         
+            for i in decoded_storage {              
+                let decoded_kv = astro_format::decode(i)?;
+                if decoded_kv.len() == 2 {
+                    storage.insert(
+                        decoded_kv[0].try_into()?,
+                        decoded_kv[1].try_into()?
+                    );
+                }
             }
-
-            let records_str: String = list::from_bytes(
-                keys_and_values
-                    .iter()
-                    .map(|x| x.as_bytes().to_vec())
-                    .collect()
-                );
-
-
-            let id_and_records = list::from_bytes(vec![
-                store.0.to_vec(),
-                records_str.as_bytes().to_vec()
-            ]);
-
-            stores.push(id_and_records)
-
+            let mut result = Account {
+                balance: Integer::from(decoded_account[0]),
+                counter: Integer::from(decoded_account[1]),
+                storage: storage,
+                storage_hash: [0_u8;32]
+            };
+            result.update_storage_hash();
+            Ok(result)
+        } else {
+            Err("Internal error!")?
         }
-
-        if !stores.is_empty() {
-            
-            let stores_str: String = list::from_bytes(
-                stores
-                    .iter()
-                    .map(|x| x.as_bytes().to_vec())
-                    .collect()
-            );
-
-            balance_counter_storage.push(stores_str.as_bytes().to_vec())
-
-        }
-
-        list::from_bytes(balance_counter_storage)
-
     }
+
+    type Error = Box<dyn Error>;
 
 }
 
-fn store_hash(store: &HashMap<[u8; 32], [u8; 32]>) -> [u8; 32] {
-
-    if store.is_empty() {
-        [0_u8; 32]
-    } else {
-
-        let mut store_vec = store
-            .iter()
-            .map(|x| (x.0, x.1))
-            .collect::<Vec<_>>();
-
-        store_vec.sort_by_key(|k| k.0);
-
-        merkle_tree_hash(
-            store_vec
-            .iter()
-            .map(|x| merkle_tree_hash(
-                vec![
-                    hash(&x.0.to_vec()),
-                    hash(&x.1.to_vec())
-                ]
-            ))
-            .collect::<Vec<_>>()
-        )
-    
+impl TryFrom<Vec<u8>> for Account {
+    type Error = Result<Self, Box<dyn Error>>;
+    fn try_from(value: Vec<u8>) -> Result<Self, Self::Error> {
+        Account::try_from(value)
     }
-
-}
-
-pub fn accounts_hash(accounts: &HashMap<[u8; 32], Account>) -> [u8; 32] {
-    
-    let mut account_hashes = accounts
-        .iter()
-        .map(|x| (x.0, x.1.hash))
-        .collect::<Vec<_>>();
-
-    account_hashes.sort_by_key(|k| k.0);
-
-    merkle_tree_hash(
-        account_hashes
-        .iter()
-        .map(|x| merkle_tree_hash(vec![hash(&x.0.to_vec()), x.1]))
-        .collect::<Vec<_>>()
-    )
-
 }
