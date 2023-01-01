@@ -1,7 +1,8 @@
 use std::error::Error;
 
-#[derive(Clone,Debug)]
+#[derive(Copy,Clone,Debug)]
 #[derive(Ord,PartialEq, PartialOrd,Eq)]
+#[derive(Hash)]
 pub struct Address(pub [u8; 32]);
 
 impl TryFrom<&str> for Address {
@@ -44,6 +45,12 @@ impl Into<Vec<u8>> for &Address {
 
 impl Into<Vec<u8>> for Address {
     fn into(self) -> Vec<u8> {
-        (&self).into()
+        self.0.to_vec()
+    }
+}
+
+impl Into<[u8; 32]> for &Address {
+    fn into(self) -> [u8; 32] {
+        self.0
     }
 }

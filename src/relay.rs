@@ -8,6 +8,7 @@ use std::collections::HashMap;
 
 use crate::chain::Chain;
 
+mod broadcast;
 mod envelope;
 mod incoming;
 mod listen;
@@ -16,6 +17,8 @@ mod message;
 mod messages;
 mod new;
 mod outgoing;
+mod random_validator;
+mod send;
 mod topic;
 
 #[derive(Clone, Debug)]
@@ -32,7 +35,7 @@ pub struct Relay {
     seeders: Vec<SocketAddr>,
     validator: bool,
     peer_route: Arc<Mutex<HashMap<String, HashMap<u8, SocketAddr>>>>,
-    consensus_route: Arc<Mutex<HashMap<String, HashMap<u8, SocketAddr>>>>,
+    pub consensus_route: Arc<Mutex<HashMap<String, HashMap<u8, SocketAddr>>>>,
     peers: Arc<Mutex<HashMap<IpAddr, Peer>>>
 }
 
@@ -82,7 +85,6 @@ impl TryFrom<&[u8]> for Ping {
 pub enum Topic {
     Block,
     BlockRequest,
-    BlockResponse,
     RouteRequest,
     RouteResponse,
     Transaction,

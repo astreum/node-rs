@@ -41,4 +41,4 @@ This is the Official Node for the Astreum Blockchain.
     sync [chain]                                                get new blocks & update accounts
 ```
 
-Copyright 12022 HE Astreum Foundation
+Copyright © 12022 HE Astreum Foundation

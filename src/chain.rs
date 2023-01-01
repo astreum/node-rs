@@ -49,3 +49,9 @@ impl Into<Vec<u8>> for &Chain {
         }
     }
 }
+
+impl Into<Vec<u8>> for Chain {
+    fn into(self) -> Vec<u8> {
+        (&self).into()
+    }
+}

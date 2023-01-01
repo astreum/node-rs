@@ -1,6 +1,7 @@
 use std::{time::SystemTime, error::Error};
 
-use fides::{hash::Blake3Hash, merkle_tree::root_from_owned};
+use fides::{hash::{Blake3Hash, blake_3}, merkle_tree::root};
+use opis::Integer;
 
 use super::Envelope;
 
@@ -9,25 +10,36 @@ impl Envelope {
     pub fn new(message: Vec<u8>, ping: bool) -> Envelope {
 
         let time = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs();
+        
+        let time_bytes: Vec<u8> = Integer::from(&time).into();
+
+        let ping_byte = if ping { vec![1] } else { vec![0] };
 
         let mut nonce = 0_u64;
 
-        let mut details = vec![
-            message.clone(),
-            nonce.to_be_bytes().to_vec(),
-            if ping { vec![1] } else { vec![0] },
-            time.to_be_bytes().to_vec()
-        ];
-
-        let mut message_hash: Blake3Hash = root_from_owned(&details);
+        let mut message_hash = root(
+            blake_3,
+            &[
+                &message,
+                &nonce.to_be_bytes(),
+                &ping_byte,
+                &time_bytes
+            ]
+        );
         
-        while message_hash.0[0] != 0 {
+        while message_hash[0] != 0 {
 
             nonce += 1;
 
-            details[1] = nonce.to_be_bytes().to_vec();
-
-            message_hash = root_from_owned(&details);
+            message_hash = root(
+                blake_3,
+                &[
+                    &message,
+                    &nonce.to_be_bytes(),
+                    &ping_byte,
+                    &time_bytes
+                ]
+            );
 
         }
 

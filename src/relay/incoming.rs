@@ -136,7 +136,6 @@ impl Relay {
                                                                                                 Topic::Transaction => {sender.send((message, incoming_address));},
                                                                                                 Topic::Block => {sender.send((message, incoming_address));},
                                                                                                 Topic::BlockRequest => {sender.send((message, incoming_address));},
-                                                                                                Topic::BlockResponse => {sender.send((message, incoming_address));},
                                                                                             }
 
                                                                                         },
