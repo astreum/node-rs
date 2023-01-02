@@ -44,14 +44,31 @@ impl TryFrom<&[u8]> for Block {
             };
 
             match block.verify() {
-                true => Ok(block),
-                false => Err("Block verification error!")?
+
+                Ok(verification) => {
+
+                    match verification {
+
+                        true => Ok(block),
+
+                        false => Err("Block verification error!")?,
+
+                    }
+
+                },
+
+                Err(_) => Err("Block verification error!")?,
+                
             }
 
         } else {
+
             Err("Block details error!")?
+
         }
+
     }
+    
 }
 
 impl TryFrom<Vec<u8>> for Block {

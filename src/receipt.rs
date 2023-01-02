@@ -1,4 +1,4 @@
-use fides::{merkle_tree::root, hash::{Blake3Hash, blake_3}};
+use fides::{merkle_tree::root, hash::blake_3};
 use opis::Integer;
 
 #[derive(Clone, Debug)]

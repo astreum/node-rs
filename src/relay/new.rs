@@ -35,7 +35,7 @@ impl Relay {
 
         let outgoing_socket = UdpSocket::bind(outgoing_address)?;
 
-        let private_key = x25519::private_key();
+        let private_key = x25519::secret_key();
 
         let public_key = x25519::public_key(&private_key);
 

@@ -25,9 +25,9 @@ checksum = "8da52d66c7071e2e3fa2a1e5c6d088fec47b593032b254f5e980de8ea54454d6"
 
 [[package]]
 name = "astro-format"
-version = "1.1.0"
+version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "53be83c573c469b1afd15a2ef0b92811585cee584522fa24dc45bdf3a4a55912"
+checksum = "6676e18eaaa46f108bce8c492088f1f0e9fba1c7160086e3d1870fd004422477"
 
 [[package]]
 name = "blake3"
@@ -196,25 +196,9 @@ dependencies = [
 
 [[package]]
 name = "fides"
-version = "3.0.3"
-dependencies = [
- "astro-format",
- "blake3",
- "chacha20poly1305",
- "ed25519-dalek",
- "opis",
- "rand 0.8.5",
- "rand_core 0.6.4",
- "sha2 0.10.6",
- "sha3",
- "x25519-dalek",
-]
-
-[[package]]
-name = "fides"
-version = "3.0.3"
+version = "3.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1fcfaa606a1e97cdd199d17b47871ef065cc1bc25c86fbf53b5c617d339d2cb8"
+checksum = "228ca26b50f1174013a766464ca4de6c3c65e2b2c3b3abea296571089060ea4a"
 dependencies = [
  "astro-format",
  "blake3",
@@ -286,7 +270,7 @@ name = "neutrondb"
 version = "5.0.3"
 dependencies = [
  "astro-format",
- "fides 3.0.3 (registry+https://github.com/rust-lang/crates.io-index)",
+ "fides",
  "hex",
  "opis",
 ]
@@ -296,7 +280,7 @@ name = "node-rs"
 version = "0.1.0"
 dependencies = [
  "astro-format",
- "fides 3.0.3",
+ "fides",
  "hex",
  "neutrondb",
  "opis",

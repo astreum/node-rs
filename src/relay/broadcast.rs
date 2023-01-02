@@ -34,9 +34,12 @@ impl Relay {
 
                                         let encrypted_message = encrypt(&peer.shared_key, &message_bytes)?;
 
-                                        let encoded_encrypted_message = astro_format::encode_vec(&[
-                                            encrypted_message.0, encrypted_message.1
-                                        ]);
+                                        let encoded_encrypted_message = astro_format::encode(
+                                            &[
+                                                &encrypted_message.0,
+                                                &encrypted_message.1
+                                            ]
+                                        );
 
                                         let envelope = Envelope::new(encoded_encrypted_message, false);
 

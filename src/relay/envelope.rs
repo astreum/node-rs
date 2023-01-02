@@ -1,6 +1,6 @@
 use std::{time::SystemTime, error::Error};
 
-use fides::{hash::{Blake3Hash, blake_3}, merkle_tree::root};
+use fides::{hash::blake_3, merkle_tree::root};
 use opis::Integer;
 
 use super::Envelope;

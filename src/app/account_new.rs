@@ -7,9 +7,9 @@ pub fn run(args: &[String]) -> Result<(), Box<dyn Error>> {
 
     println!("creating account ...");
 
-    let private_key = ed25519::private_key();
+    let private_key = ed25519::secret_key();
 
-    let public_key = ed25519::public_key(&private_key);
+    let public_key = ed25519::public_key(&private_key)?;
 
     let public_key_hex = hex::encode(&public_key);
 
