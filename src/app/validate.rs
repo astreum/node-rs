@@ -1,37 +1,176 @@
-use std::{error::Error, path::Path, fs};
+use std::error::Error;
+use std::sync::Arc;
+use std::thread;
+use std::time::{Instant, SystemTime, Duration};
+use crate::address::Address;
+use crate::block::Block;
+use crate::relay::{Message, Topic};
+use super::App;
 
-use crate::{address::Address, chain::Chain, state::State};
 
+impl App {
 
+    pub fn validate(&self, public_key: Address, secret_key: [u8;32]) -> Result<(), Box<dyn Error>> {
 
+        println!("validating ...");
 
-pub fn run(args: &[String]) -> Result<(), Box<dyn Error>> {
-    
-    println!("Validating ...");
+        let relay_clone = Arc::clone(&self.relay);
 
-    if args.len() == 4 {
+        let state_clone = Arc::clone(&self.state);
 
-        let validator_address = Address::try_from(&args[4][..])?;
+        let blocks_store_clone = Arc::clone(&self.blocks_store);
 
-        let private_key_path_str = format!("./keys/{:?}", validator_address);
+        let pending_transactions_clone = Arc::clone(&self.pending_transactions);
 
-        let private_key_path = Path::new(&private_key_path_str);
+        thread::spawn(move || {
+
+            let mut now = Instant::now();
+
+            loop {
+
+                if now.elapsed().as_secs() > 1 {
+
+                    match state_clone.lock() {
+
+                        Ok(mut state) => {
+
+                            let mut current_time = SystemTime::now()
+                                .duration_since(SystemTime::UNIX_EPOCH)
+                                .unwrap()
+                                .as_secs();
         
-        let private_key = fs::read(private_key_path)?;
-
-        let chain = Chain::try_from(&args[3][..])?;
-
-        let state = State::new(false, chain)?;
+                            let time_diff = current_time - &state.latest_block.time;
         
-        state.sync();
+                            let target_time = if time_diff > 3 {
+        
+                                current_time
+                        
+                            } else {
+                        
+                                &state.latest_block.time + 3
+                        
+                            };
 
-        state.validate(validator_address, private_key[..].try_into()?);
+                            match state.validator(&current_time) {
+
+                                Ok(validator) => {
+
+                                    if validator.0 == public_key {
+
+                                        match pending_transactions_clone.lock() {
+
+                                            Ok(mut pending_transactions) => {
+
+                                                match blocks_store_clone.lock() {
+
+                                                    Ok(mut blocks_store) => {
+
+                                                        match Block::create(
+                                                            &blocks_store,
+                                                            &pending_transactions,
+                                                            &public_key,
+                                                            &secret_key,
+                                                            &mut state,
+                                                            &target_time,
+                                                        ) {
+                        
+                                                            Ok((changed_accounts, new_block)) => {
+                        
+                                                                current_time = SystemTime::now()
+                                                                    .duration_since(SystemTime::UNIX_EPOCH)
+                                                                    .unwrap()
+                                                                    .as_secs();
+                        
+                                                                let new_block_bytes: Vec<u8> = new_block.clone().into();
+                        
+                                                                let new_block_message = Message::new(
+                                                                    &new_block_bytes,
+                                                                    &Topic::Block
+                                                                );
+                        
+                                                                if current_time <= target_time {
+                        
+                                                                    while current_time < target_time {
+                        
+                                                                        thread::sleep(Duration::from_millis(100));
+                        
+                                                                        current_time = SystemTime::now()
+                                                                            .duration_since(SystemTime::UNIX_EPOCH)
+                                                                            .unwrap()
+                                                                            .as_secs();
+                                                                        
+                                                                    }
+                        
+                                                                    match relay_clone.lock() {
+                        
+                                                                        Ok(relay) => {
+                        
+                                                                            let _ = relay.broadcast(&new_block_message);
+                        
+                                                                            for (changed_address, changed_account) in changed_accounts {
+                        
+                                                                                state.accounts.insert(changed_address, changed_account.details_hash());
+                                
+                                                                                state.accounts_store.put(&changed_address, &changed_account).unwrap();
+                                
+                                                                            }
+                                                                            
+                                                                            for tx in &new_block.transactions {
+                                
+                                                                                pending_transactions.remove(&tx.details_hash);
+                                
+                                                                            }
+                                
+                                                                            let _ = blocks_store.put(&new_block.number, &new_block);
+                                
+                                                                            state.latest_block = new_block;
+                                                                            
+                                                                        }
+                        
+                                                                        Err(_) => (),
+                        
+                                                                    }
+                        
+                                                                }
+                        
+                        
+                                                            },
+                        
+                                                            Err(_) => (),
+                        
+                                                        }
+
+
+                                                    },
+
+                                                    Err(_) => (),
+
+                                                }
+
+                                            },
+
+                                            Err(_) => (),
+                                        }
+                                    }
+                                },
+                                Err(_) => (),
+
+                            }
+                        },
+                        Err(_) => (),
+                    }
+
+                    now = Instant::now();
+                    
+                }
+
+                thread::sleep(Duration::from_millis(100));
+                
+            }
+
+        });
 
         Ok(())
-
-    } else {
-
-        Err("Usage is: validate [chain] [address]")?
 
     }
 

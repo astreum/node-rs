@@ -1,32 +1,30 @@
-use std::{thread, sync::Arc, error::Error};
-
+use std::{error::Error, sync::Arc, thread};
 use opis::Integer;
-
 use crate::{relay::{Topic, Message}, block::Block, transaction::Transaction};
 
-use super::State;
+use super::App;
 
-impl State {
+impl App {
 
-    pub fn messages(&self) -> Result<(), Box<dyn Error>> {
+    pub fn listen(&self) -> Result<(), Box<dyn Error>> {
 
-        let accounts_clone = Arc::clone(&self.accounts);
+        println!("listening ...");
 
-        let accounts_store_clone = Arc::clone(&self.accounts_store);
+        let relay_clone = Arc::clone(&self.relay);
 
-        let blocks_store_clone = Arc::clone(&self.blocks_store);
-
-        let latest_block_clone = Arc::clone(&self.latest_block);
+        let state_clone = Arc::clone(&self.state);
 
         let pending_transactions_clone = Arc::clone(&self.pending_transactions);
 
-        let relay_clone = Arc::clone(&self.relay);
+        let blocks_store_clone = Arc::clone(&self.blocks_store);
 
         thread::spawn(move || {
 
             let relay = relay_clone.lock().unwrap();
         
             let messages = relay.messages().unwrap();
+
+            drop(relay);
 
             loop {
 
@@ -42,13 +40,30 @@ impl State {
                                 
                                 Ok(block) => {
 
-                                    // state.transition(&block);
+                                    match state_clone.lock() {
 
+                                        Ok(mut state) => {
+                                            
+                                           match state.transition(&block) {
+
+                                                Ok(_) => println!("block applied!"),
+
+                                                Err(_) => todo!(),
+                                            
+                                            }
+                                        
+                                        },
+                                        
+                                        Err(_) => (),
+                                    
+                                    }
+                                
                                 },
-
-                                _ => (),
-
+                                
+                                _ => println!("bad block!"),
+                            
                             }
+                        
                         },
 
                         Topic::BlockRequest => {
@@ -73,7 +88,7 @@ impl State {
                                                 
                                                 Ok(relay) => {
 
-                                                    relay.send(&peer, &block_message);
+                                                    let _ = relay.send(&peer, &block_message);
 
                                                 },
 
@@ -120,7 +135,7 @@ impl State {
 
                                                         Ok(relay) => {
 
-                                                            relay.broadcast(&message);
+                                                            let _ = relay.broadcast(&message);
 
                                                         },
 
@@ -150,7 +165,7 @@ impl State {
                     
                         _ => ()
                     }
-                    
+
                 }
 
             }
@@ -160,5 +175,4 @@ impl State {
         Ok(())
 
     }
-
 }

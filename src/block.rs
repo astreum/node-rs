@@ -17,6 +17,7 @@ pub struct Block {
     pub block_hash: [u8; 32],
     pub chain: Chain,
     pub data: Vec<u8>,
+    pub delay_difficulty: u64,
     pub delay_output: Vec<u8>,
     pub details_hash: [u8; 32],
     pub number: Integer,
@@ -29,3 +30,4 @@ pub struct Block {
     pub transactions_hash: [u8; 32],
     pub validator: Address,
 }
+

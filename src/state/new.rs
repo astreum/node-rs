@@ -1,4 +1,4 @@
-use std::{error::Error, collections::{BTreeMap, HashMap}, fs::File, io::{BufReader, BufRead}, net::SocketAddr, sync::{Arc, Mutex}};
+use std::{error::Error, collections::{BTreeMap, HashMap}};
 
 use neutrondb::Store;
 use opis::Integer;
@@ -9,16 +9,12 @@ use super::State;
 
 impl State {
 
-    pub fn new(bootstrap: bool, chain: Chain) -> Result<Self, Box<dyn Error>> {
+    pub fn new(chain: Chain) -> Result<Self, Box<dyn Error>> {
 
         let mut accounts: BTreeMap<Address, [u8;32]> = BTreeMap::new();
 
         let mut accounts_store: Store<Address, Account> = Store::new(
             &format!("./data/{:?}_accounts",chain)
-        )?;
-
-        let blocks_store: Store<Integer, Block> = Store::new(
-            &format!("blocks_{:?}", &chain)
         )?;
 
         // let stored_accounts = accounts_store.get_all()?;
@@ -62,29 +58,10 @@ impl State {
 
         };
 
-        let seeders_file = File::open("./seeders.txt")?;
-
-        let mut seeders = Vec::new();
-        
-        for seeder in BufReader::new(seeders_file).lines() {
-
-            let seeder = seeder?;
-            
-            let socket: SocketAddr = seeder.parse()?;
-
-            seeders.push(socket)
-
-        }
-        
-        let relay = Relay::new(chain, false, seeders, true)?;
-
         Ok(State {
-            accounts: Arc::new(Mutex::new(accounts)),
-            accounts_store: Arc::new(Mutex::new(accounts_store)),
-            blocks_store: Arc::new(Mutex::new(blocks_store)),
-            latest_block: Arc::new(Mutex::new(latest_block)),
-            pending_transactions: Arc::new(Mutex::new(BTreeMap::new())),
-            relay: Arc::new(Mutex::new(relay))
+            accounts,
+            accounts_store,
+            latest_block,
         })
 
     }

@@ -2,25 +2,26 @@ use crate::account::Account;
 use crate::address::Address;
 use crate::block::Block;
 use crate::receipt::Receipt;
+use crate::state::State;
 use crate::transaction::Transaction;
-use fides::ed25519;
 use fides::hash::blake_3;
-use fides::merkle_tree::root;
+use fides::merkle_tree::{root, self};
 use neutrondb::Store;
-use opis::Integer;
+use opis::{Integer};
 use std::collections::{BTreeMap, HashMap};
 use std::error::Error;
+use vdf::{WesolowskiVDFParams, VDFParams, VDF};
+
+use super::details_hash;
 
 impl Block {
 
     pub fn create(
-
-        accounts: &BTreeMap<Address, [u8;32]>,
-        accounts_store: &Store<Address, Account>,
-        latest_block: &Block,
+        blocks_store: &Store<Integer, Block>,
         pending_transactions: &BTreeMap<[u8;32],Transaction>,
+        public_key: &Address,
         secret_key: &[u8;32],
-        validator_address: &Address,
+        state: &mut State,
         target_time: &u64
 
     ) -> Result<(HashMap<Address, Account>, Block), Box<dyn Error>> {
@@ -35,7 +36,7 @@ impl Block {
 
         for tx in pending_transactions.iter() {
             
-            match tx.1.apply(&accounts_store, &mut changed_accounts) {
+            match tx.1.apply(&state.accounts_store, &mut changed_accounts) {
 
                 Ok(receipt) => {
 
@@ -54,16 +55,16 @@ impl Block {
         }
 
         let mut validator_account = Account::from_accounts(
-            validator_address,
+            public_key,
             &changed_accounts,
-            &accounts_store
+            &state.accounts_store
         )?;
         
         let validator_reward = Integer::from_dec("1000000000")?;
         
         validator_account.increase_balance(&validator_reward);
 
-        changed_accounts.insert(*validator_address, validator_account);
+        changed_accounts.insert(*public_key, validator_account);
 
         let receipts_hashes: Vec<[u8; 32]> = receipts
             .iter()
@@ -79,27 +80,27 @@ impl Block {
             )
         );
 
+        let mut accounts = state.accounts.clone();
+
+        // update account details hashes in changed_accounts
+
+        for (address, account) in &changed_accounts {
+
+            accounts.insert(*address, account.details_hash);
+
+        }
+
         let accounts_hashes: Vec<_> = accounts
             .iter()
             .map(|x| {
-
-                let details_hash = match changed_accounts.get(x.0) {
-
-                    Some(account) => account.details_hash(),
-
-                    None => *x.1
-
-                };
-
-                root(
+                merkle_tree::root(
                     blake_3,
-                    &[&x.0.0[..], &details_hash[..]]
+                    &[&x.0.0[..], x.1]
                 )
-                
             })
             .collect();
 
-        let accounts_hash = root(
+        let accounts_hash = merkle_tree::root(
             blake_3,
             &(accounts_hashes
                 .iter()
@@ -108,29 +109,62 @@ impl Block {
             )
         );
 
-        // calculate delay output 
+        let vdf = WesolowskiVDFParams(2048).new();
+
+        let challenge = merkle_tree::root(
+            blake_3,
+            &[
+                &public_key.0,
+                &state.latest_block.delay_output
+            ]
+        );
+
+        let int_100: Integer = (&100_u8).into();
+
+        let difficulty = if &state.latest_block.number > &int_100 {
+
+            let past_block_number = &state.latest_block.number - &int_100;
+
+            let past_block = blocks_store.get(&past_block_number)?;
+
+            let block_time_diff = state.latest_block.time - past_block.time;
+
+            state.latest_block.delay_difficulty * (300 / block_time_diff)
+
+        } else {
+
+            1_u64
+
+        };
+
+        let delay_output = vdf
+            .solve(&challenge, difficulty)
+            .unwrap_or(Err("VDF error!")?);
 
         let mut new_block = Block {
             accounts_hash,
-            chain: latest_block.chain.clone(),
-            number: &latest_block.number + &Integer::one(),
-            previous_block_hash: latest_block.block_hash,
+            chain: state.latest_block.chain.clone(),
+            number: &state.latest_block.number + &Integer::one(),
+            previous_block_hash: state.latest_block.block_hash,
             receipts_hash,
             signature: [0_u8;64],
             solar_used,
             time: *target_time,
             transactions,
-            validator: *validator_address,
-            data: "Astreum Foundation Node v0.0.1".as_bytes().into(),
-            delay_output: vec![],
+            validator: *public_key,
+            data: "Astreum Foundation Node v0.0.1 by Stelar Labs".as_bytes().into(),
+            delay_output,
             transactions_hash: [0; 32],
             block_hash: [0; 32],
             details_hash: [0; 32],
+            delay_difficulty: difficulty,
         };
 
         new_block.update_details_hash();
 
-        new_block.sign(secret_key);
+        new_block.sign(secret_key)?;
+
+        // update block hash
 
         Ok((changed_accounts, new_block))
         

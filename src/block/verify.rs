@@ -1,6 +1,6 @@
 use std::error::Error;
 
-use fides::ed25519;
+use fides::{ed25519, hash};
 use opis::Integer;
 use super::Block;
 
@@ -12,13 +12,13 @@ impl Block {
 
             Ok(true)
 
-        } else { 
+        } else {
 
-            ed25519::verify(
-                &self.details_hash,
-                &self.validator.0,
-                &self.signature
-            )  
+            // verify tx hash
+
+            // verify details hash
+
+            ed25519::verify(&self.details_hash, &self.validator.0, &self.signature)  
 
         }
 

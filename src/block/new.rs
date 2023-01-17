@@ -23,6 +23,7 @@ impl Block {
             transactions: Vec::new(),
             validator: Address([0_u8; 32]),
             transactions_hash: [0; 32],
+            delay_difficulty: 0,
         }
         
     }

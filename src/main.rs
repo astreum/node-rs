@@ -1,6 +1,6 @@
 
-use std::{env, error::Error};
-use crate::address::Address;
+use std::{env, error::Error, path::Path, fs};
+use crate::{address::Address, chain::Chain, state::State, app::App};
 mod account;
 mod address;
 mod app;
@@ -51,9 +51,9 @@ fn main() -> Result<(), Box<dyn Error>> {
 
                     match command {
 
-                        "new" => app::account_new::run(&args)?,
+                        "new" => app::account_new::run(&args),
                         
-                        "view" => app::account_view::run(&args)?,
+                        "view" => app::account_view::run(&args),
 
                         _ => Err("")?
 
@@ -67,24 +67,73 @@ fn main() -> Result<(), Box<dyn Error>> {
                 
             },
 
-            "transaction" => app::transaction::run(&args)?,
+            "transaction" => app::transaction::run(&args),
 
             "block" => {
+
                 if args.len() == 5 {
                     // check local storage
                     // search network
+                    Ok(())
+
+                } else {
+
+                    Err("")?
+
                 }
+
             },
 
-            "stake" => app::stake::run(&args)?,
+            "stake" => app::stake::run(&args),
 
-            "validate" => app::validate::run(&args)?,
+            "validate" => {
+
+                if args.len() == 4 {
+
+                    let public_key = Address::try_from(&args[4][..])?;
+        
+                    let secret_key_path_str = format!("./keys/{:?}", public_key);
+        
+                    let secret_key_path = Path::new(&secret_key_path_str);
+                    
+                    let secret_key = fs::read(secret_key_path)?;
+        
+                    let chain = Chain::try_from(&args[3][..])?;
+        
+                    let app = App::new(chain)?;
+                    
+                    app.listen();
+
+                    app.validate(public_key, secret_key[..].try_into()?);
+        
+                    Ok(())
+        
+                } else {
+        
+                    Err("Usage is: validate [chain] [address]")?
+        
+                }
+
+            },
             
-            "sync" => app::sync::run(&args)?,
+            "sync" => {
 
-            _ =>  ()
+                let chain = Chain::try_from(&args[3][..])?;
+
+                let app = App::new(chain)?;
+                    
+                app.listen();
+
+                Ok(())
+
+            },
+
+            _ =>  Err("")?
+
         }
+
     } else {
+
         println!(r###"
 
     Usage
@@ -110,14 +159,14 @@ fn main() -> Result<(), Box<dyn Error>> {
     sync [chain]                                                get new blocks & update accounts
 
         "###);
+    
+        println!(r###"
+        Copyright © Astreum Foundation Established 12023 HE
+        
+        "###);
+        
+        Ok(())
 
     }
-    
-    println!(r###"
-    Copyright 12022 HE Astreum Foundation
-    
-    "###);
-    
-    Ok(())
     
 }
