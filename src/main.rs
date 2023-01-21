@@ -1,6 +1,12 @@
+use rand::Rng;
 
-use std::{env, error::Error, path::Path, fs};
-use crate::{address::Address, chain::Chain, state::State, app::App};
+use crate::address::Address;
+use crate::app::App;
+use crate::chain::Chain;
+use std::env;
+use std::error::Error;
+use std::path::Path;
+use std::fs;
 mod account;
 mod address;
 mod app;
@@ -14,8 +20,6 @@ mod state;
 const CONSENSUS_ADDRESS: Address = Address([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 99, 111, 110, 115, 101, 110, 115, 117, 115]);
 
 const STELAR_ADDRESS: Address = Address([0, 1, 2, 3, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 99, 111, 110, 115, 101, 110, 115, 117, 115]);
-
-const BURN_ADDRESS: Address = Address([0;32]);
 
 fn main() -> Result<(), Box<dyn Error>> {
 
@@ -32,6 +36,9 @@ fn main() -> Result<(), Box<dyn Error>> {
     .v   v.  .vvv.      v     .v   v.  .vvvv.   .vvv.   .v       v.  .v.
     
     Node v0.0.1
+
+    Copyright © Astreum Foundation Established 12023 HE
+    
     "###);
 
     
@@ -51,7 +58,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
                     match command {
 
-                        "new" => app::account_new::run(&args),
+                        "new" => app::account_new::run(),
                         
                         "view" => app::account_view::run(&args),
 
@@ -69,24 +76,26 @@ fn main() -> Result<(), Box<dyn Error>> {
 
             "transaction" => app::transaction::run(&args),
 
-            "block" => {
+            // "block" => {
 
-                if args.len() == 5 {
-                    // check local storage
-                    // search network
-                    Ok(())
+            //     if args.len() == 5 {
+            //         // check local storage
+            //         // search network
+            //         Ok(())
 
-                } else {
+            //     } else {
 
-                    Err("")?
+            //         Err("")?
 
-                }
+            //     }
 
-            },
+            // },
 
             "stake" => app::stake::run(&args),
 
             "validate" => {
+
+                println!("info: validating");
 
                 if args.len() == 4 {
 
@@ -97,14 +106,22 @@ fn main() -> Result<(), Box<dyn Error>> {
                     let secret_key_path = Path::new(&secret_key_path_str);
                     
                     let secret_key = fs::read(secret_key_path)?;
+
+                    println!("info: key found for {:?}", public_key);
         
                     let chain = Chain::try_from(&args[3][..])?;
-        
-                    let app = App::new(chain)?;
-                    
-                    app.listen();
 
-                    app.validate(public_key, secret_key[..].try_into()?);
+                    let app = App::new(
+                        &chain,
+                        &rand::thread_rng().gen_range(49152..65535),
+                        &true
+                    )?;
+                    
+                    app.listen()?;
+
+                    app.update()?;
+
+                    app.validate(public_key, secret_key[..].try_into()?)?;
         
                     Ok(())
         
@@ -116,17 +133,21 @@ fn main() -> Result<(), Box<dyn Error>> {
 
             },
             
-            "sync" => {
+            // "sync" => {
 
-                let chain = Chain::try_from(&args[3][..])?;
+            //     println!("Syncing ...");
 
-                let app = App::new(chain)?;
+            //     let chain = Chain::try_from(&args[3][..])?;
+
+            //     let app = App::new(chain)?;
                     
-                app.listen();
+            //     app.listen()?;
 
-                Ok(())
+            //     app.update()?;
 
-            },
+            //     Ok(())
+
+            // },
 
             _ =>  Err("")?
 
@@ -142,7 +163,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     account new                                                 create & store a new private key
 
-    account view [chain] [address]                              shows account information from local & peers 
+    account view [chain] [address]                              shows account information in local storage 
 
     transaction new [chain] [address] [recipient] [value]       create, sign & submit a transaction     
 
@@ -158,11 +179,6 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     sync [chain]                                                get new blocks & update accounts
 
-        "###);
-    
-        println!(r###"
-        Copyright © Astreum Foundation Established 12023 HE
-        
         "###);
         
         Ok(())

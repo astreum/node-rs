@@ -1,6 +1,7 @@
 mod apply;
 mod new;
 mod create_block;
+mod delay_difficulty;
 mod transition;
 mod validator;
 use std::collections::BTreeMap;

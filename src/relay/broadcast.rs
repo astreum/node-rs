@@ -24,11 +24,11 @@ impl Relay {
 
                     Ok(peers) => {
 
-                        for (_,bucket) in consensus_route.iter() {
+                        for (_,bucket) in consensus_route.0.iter() {
 
-                            for (_, address) in bucket.iter() {
+                            for address in bucket.iter() {
 
-                                match peers.get(&address.ip()) {
+                                match peers.get(&address) {
 
                                     Some(peer) => {
 
@@ -45,7 +45,7 @@ impl Relay {
 
                                         validator_messages.push((
                                             (&envelope).into(),
-                                            SocketAddr::new(address.ip(), peer.incoming_port)
+                                            SocketAddr::new(*address, peer.incoming_port)
                                         ));
 
 

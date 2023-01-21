@@ -121,21 +121,7 @@ impl Block {
 
         let int_100: Integer = (&100_u8).into();
 
-        let difficulty = if &state.latest_block.number > &int_100 {
-
-            let past_block_number = &state.latest_block.number - &int_100;
-
-            let past_block = blocks_store.get(&past_block_number)?;
-
-            let block_time_diff = state.latest_block.time - past_block.time;
-
-            state.latest_block.delay_difficulty * (300 / block_time_diff)
-
-        } else {
-
-            1_u64
-
-        };
+        let difficulty = 
 
         let delay_output = vdf
             .solve(&challenge, difficulty)

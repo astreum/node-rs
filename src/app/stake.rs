@@ -2,8 +2,9 @@ use std::{error::Error, path::Path, fs};
 
 use neutrondb::Store;
 use opis::Integer;
+use rand::Rng;
 
-use crate::{chain::Chain, address::Address, account::Account, CONSENSUS_ADDRESS, transaction::Transaction};
+use crate::{chain::Chain, address::Address, account::Account, CONSENSUS_ADDRESS, transaction::Transaction, relay::{Message, Topic, Relay}};
 
 
 pub fn run(args: &[String]) -> Result<(), Box<dyn Error>> {
@@ -38,7 +39,7 @@ pub fn run(args: &[String]) -> Result<(), Box<dyn Error>> {
                     let secret_key_path_str = format!("./keys/{:?}", &sender);
 
                     let mut tx = Transaction {
-                        chain,
+                        chain: chain.clone(),
                         counter,
                         recipient,
                         sender,
@@ -48,13 +49,24 @@ pub fn run(args: &[String]) -> Result<(), Box<dyn Error>> {
                         signature: [0; 64],
                     };
 
+                    tx.update_details_hash();
+
                     let secret_key_path = Path::new(&secret_key_path_str);
                     
                     let secret_key = fs::read(secret_key_path)?;
 
-                    tx.sign(secret_key[..].try_into()?);
+                    tx.sign(secret_key[..].try_into()?)?;
 
-                    // submit tx
+                    let tx_bytes: Vec<u8> = tx.into();
+
+                    let tx_msg = Message::new(&tx_bytes, &Topic::Transaction);
+
+                    let relay = Relay::new(
+                        &rand::thread_rng().gen_range(49152..65535),
+                        &false
+                    )?;
+
+                    relay.broadcast(&tx_msg)?;
 
                     Ok(())
 
@@ -92,7 +104,7 @@ pub fn run(args: &[String]) -> Result<(), Box<dyn Error>> {
                     let secret_key_path_str = format!("./keys/{:?}", &sender);
 
                     let mut tx = Transaction {
-                        chain,
+                        chain: chain.clone(),
                         counter,
                         data,
                         recipient,
@@ -102,13 +114,24 @@ pub fn run(args: &[String]) -> Result<(), Box<dyn Error>> {
                         signature: [0; 64],
                     };
 
+                    tx.update_details_hash();
+
                     let secret_key_path = Path::new(&secret_key_path_str);
                     
                     let secret_key = fs::read(secret_key_path)?;
 
-                    tx.sign(secret_key[..].try_into()?);
+                    tx.sign(secret_key[..].try_into()?)?;
 
-                    // submit tx
+                    let tx_bytes: Vec<u8> = tx.into();
+
+                    let tx_msg = Message::new(&tx_bytes, &Topic::Transaction);
+
+                    let relay = Relay::new(
+                        &rand::thread_rng().gen_range(49152..65535),
+                        &false
+                    )?;
+
+                    relay.broadcast(&tx_msg)?;
 
                     Ok(())
 

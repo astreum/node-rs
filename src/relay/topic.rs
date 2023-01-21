@@ -6,9 +6,8 @@ impl Into<Vec<u8>> for Topic {
         match self {
             Topic::Block => vec![1],
             Topic::BlockRequest => vec![2],
-            Topic::RouteRequest => vec![3],
-            Topic::RouteResponse => vec![4],
-            Topic::Transaction => vec![5],
+            Topic::Routing => vec![3],
+            Topic::Transaction => vec![4],
         }
     }
 }
@@ -21,9 +20,8 @@ impl TryFrom<&[u8]> for Topic {
         match value {
             [1] => Ok(Topic::Block),
             [2] => Ok(Topic::BlockRequest),
-            [3] => Ok(Topic::RouteRequest),
-            [4] => Ok(Topic::RouteResponse),
-            [5] => Ok(Topic::Transaction),
+            [3] => Ok(Topic::Routing),
+            [4] => Ok(Topic::Transaction),
             _ => Err("Topic value error!")?
         }
     }

@@ -1,12 +1,9 @@
 use neutrondb::Store;
 use opis::Integer;
+use rand::Rng;
 use std::error::Error;
 use std::fs;
-use std::fs::File;
-use std::io::BufRead;
-use std::io::BufReader;
 use std::path::Path;
-use std::net::SocketAddr;
 use crate::chain::Chain;
 use crate::address::Address;
 use crate::account::Account;
@@ -55,29 +52,18 @@ pub fn run(args: &[String]) -> Result<(), Box<dyn Error>> {
         
         let secret_key = fs::read(secret_key_path)?;
 
-        tx.sign(secret_key[..].try_into()?);
+        tx.sign(secret_key[..].try_into()?)?;
 
         let tx_bytes: Vec<u8> = tx.into();
         
-        let tx_message = Message::new(&tx_bytes, &Topic::Transaction);
+        let tx_msg = Message::new(&tx_bytes, &Topic::Transaction);
 
-        let seeders_file = File::open("./seeders.txt")?;
-
-        let mut seeders = Vec::new();
+        let relay = Relay::new(
+            &rand::thread_rng().gen_range(49152..65535),
+            &false
+        )?;
         
-        for seeder in BufReader::new(seeders_file).lines() {
-
-            let seeder = seeder?;
-            
-            let socket: SocketAddr = seeder.parse()?;
-
-            seeders.push(socket)
-
-        }
-
-        let relay = Relay::new(chain, false, seeders, false)?;
-        
-        relay.broadcast(&tx_message);
+        relay.broadcast(&tx_msg)?;
 
         Ok(())
         

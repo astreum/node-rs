@@ -19,6 +19,19 @@
 
 This is the Official Node for the Astreum Blockchain.
 
+## Install
+
+### Dependencies
+
+Rust
+
+```
+git clone
+
+cargo install
+
+```
+
 ## Usage
 
 ```

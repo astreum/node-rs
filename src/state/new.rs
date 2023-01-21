@@ -3,13 +3,13 @@ use std::{error::Error, collections::{BTreeMap, HashMap}};
 use neutrondb::Store;
 use opis::Integer;
 
-use crate::{chain::Chain, address::Address, account::Account, block::Block, STELAR_ADDRESS, CONSENSUS_ADDRESS, relay::Relay};
+use crate::{chain::Chain, address::Address, account::Account, block::Block, STELAR_ADDRESS, CONSENSUS_ADDRESS};
 
 use super::State;
 
 impl State {
 
-    pub fn new(chain: Chain) -> Result<Self, Box<dyn Error>> {
+    pub fn new(chain: &Chain) -> Result<Self, Box<dyn Error>> {
 
         let mut accounts: BTreeMap<Address, [u8;32]> = BTreeMap::new();
 

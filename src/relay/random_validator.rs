@@ -18,21 +18,19 @@ impl Relay {
 
                 let mut rng = rand::thread_rng();
 
-                let random_bucket = rng.gen_range(0..consensus_route.len());
+                let random_bucket = rng.gen_range(0..consensus_route.0.len());
 
                 let mut i = 0;
 
                 let mut res: Result<IpAddr, Box<dyn Error>> = Err("Internal error!")?;
 
-                for (_,bucket) in consensus_route.iter() {
+                for (_,bucket) in consensus_route.0.iter() {
 
                     if i == random_bucket {
 
-                        let random_peer = rng.gen_range(0..bucket.len() as u8);
+                        let random_peer = rng.gen_range(0..bucket.len());
 
-                        let validator = bucket.get(&random_peer).unwrap_or(Err("Internal error!")?);
-
-                        res = Ok(validator.ip())
+                        res = Ok(bucket[random_peer])
 
                     } else {
 

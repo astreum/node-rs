@@ -1,4 +1,4 @@
-use std::{error::Error, sync::Arc, thread, time::{Instant, SystemTime}};
+use std::{error::Error, sync::Arc, thread, time::{Instant, SystemTime, Duration}};
 
 use opis::Integer;
 
@@ -16,6 +16,8 @@ impl App {
         let state_clone = Arc::clone(&self.state);
 
         thread::spawn(move || {
+
+            let delay = Duration::from_millis(100);
 
             let mut now = Instant::now();
 
@@ -48,17 +50,17 @@ impl App {
 
                                             Ok(random_validator) => {
 
-                                                relay.send(&random_validator, &next_block_message)
+                                                let _ = relay.send(&random_validator, &next_block_message);
                                             
                                             },
 
-                                            Err(_) => Ok(()),
+                                            Err(_) => (),
 
                                         }
                     
                                     },
                     
-                                    Err(_) => Ok(()),
+                                    Err(_) => (),
                     
                                 };
                                 
@@ -70,6 +72,12 @@ impl App {
 
                     }
 
+                    now = Instant::now()
+
+                } else {
+                    
+                    thread::sleep(delay)
+                    
                 }
 
             }

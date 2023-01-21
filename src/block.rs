@@ -1,5 +1,4 @@
 mod block_hash;
-mod create;
 mod details_hash;
 mod from;
 mod into;

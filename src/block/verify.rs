@@ -1,6 +1,6 @@
 use std::error::Error;
 
-use fides::{ed25519, hash};
+use fides::{ed25519};
 use opis::Integer;
 use super::Block;
 

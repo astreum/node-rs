@@ -9,6 +9,12 @@ impl Relay {
 
         let outgoing_queue_clone = Arc::clone(&self.outgoing_queue);
 
+        let consensus_route_clone = Arc::clone(&self.consensus_route);
+
+        let peer_route_clone = Arc::clone(&self.peer_route); 
+
+        let seeders = self.seeders.clone();
+
         let liveness_ping = Ping {
             incoming_port: self.incoming_port,
             public_key: self.public_key,
@@ -33,34 +39,81 @@ impl Relay {
                                 
                                 Ok(mut outgoing_queue) => {
 
-                                    let t = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs();
+                                    if peers.is_empty() {
 
-                                    for (ip,peer) in peers.iter() {
+                                        for seeder in &seeders {
         
-                                        if (t - peer.timestamp) > 330 {
-        
-                                            // remove from routes
-        
-                                        }
-        
-                                        if (t - peer.timestamp) > 300 {
-        
-                                            outgoing_queue.push((
+                                            let _ = outgoing_queue.push((
                                                 (&liveness_envelope).into(),
-                                                SocketAddr::new(*ip, peer.incoming_port)
-                                            ))
-        
+                                                *seeder
+                                            ));
+                                
                                         }
-        
-                                    }
 
+                                    } else {
+
+                                        let t = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs();
+
+                                        for (peer_address, peer) in peers.iter() {
+            
+                                            if (t - peer.timestamp) > 330 {
+
+                                                match peers_clone.lock() {
+
+                                                    Ok(mut peers) => {
+                                                        
+                                                        peers.remove(peer_address);
+                                                    
+                                                    },
+
+                                                    Err(_) => (),
+
+                                                }
+
+                                                match consensus_route_clone.lock() {
+
+                                                    Ok(mut consensus_route) => {
+
+                                                        consensus_route.remove_peer(peer_address)
+
+                                                    },
+
+                                                    Err(_) => (),
+
+                                                }
+
+                                                match peer_route_clone.lock() {
+
+                                                    Ok(mut peer_route) => {
+
+                                                        peer_route.remove_peer(peer_address)
+
+                                                    },
+
+                                                    Err(_) => (),
+
+                                                }
+            
+                                            }
+            
+                                            if (t - peer.timestamp) > 300 {
+            
+                                                outgoing_queue.push((
+                                                    (&liveness_envelope).into(),
+                                                    SocketAddr::new(*peer_address, peer.incoming_port)
+                                                ))
+            
+                                            }
+            
+                                        }
+
+                                    }
                                     
                                 },
 
                                 Err(_) => ()
                             }
 
-                            
 
                         },
 

@@ -35,28 +35,34 @@ impl Transaction {
                     if self.sender != self.recipient {
 
                         if self.recipient == CONSENSUS_ADDRESS {
+                            
+                            if self.value != Integer::zero() {
+                                
+                                sender.decrease_balance(&self.value)?;
 
-                            match Account::from_accounts(&self.recipient, &changed_accounts, &accounts_store) {
+                                match Account::from_accounts(&self.sender, &changed_accounts, &accounts_store) {
 
-                                Ok(mut consensus) => {
-
-                                    if self.value == Integer::zero() {
-
-                                        // remove balance
-
-                                    } else {
+                                    Ok(_consensus) => {
 
                                         // add stake
 
+                                        Err("")?
+
                                     }
 
-                                },
+                                    Err(_) => Err("")?,
 
-                                Err(_) => todo!(),
+                                }
+
+                            } else {
+
+                                // decrease stake by amount in tx data
+
+                                // add value to user account
+
+                                Err("")?
 
                             }
-
-                            Err("")?
 
 
                         } else {

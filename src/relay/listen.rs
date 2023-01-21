@@ -18,7 +18,7 @@ impl Relay {
 
                     loop {
                         
-                        let mut buffer = [0; 32000];
+                        let mut buffer = [0; 32000000];
 
                         match incoming_socket.recv_from(&mut buffer) {
 

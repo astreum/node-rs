@@ -2,7 +2,7 @@ use std::{error::Error, collections::HashMap};
 
 use opis::Integer;
 
-use crate::{block::Block, address::Address, account::Account, CONSENSUS_ADDRESS};
+use crate::{address::Address, account::Account, CONSENSUS_ADDRESS};
 
 use super::State;
 
@@ -10,7 +10,7 @@ impl State {
 
     pub fn validator(&mut self, target_time: &u64) -> Result<(Address, HashMap<Address, Account>), Box<dyn Error>> {
         
-        let mut changed_accounts: HashMap<Address, Account> = HashMap::new();
+        let changed_accounts: HashMap<Address, Account> = HashMap::new();
 
         let consensus_account = self.accounts_store.get(&CONSENSUS_ADDRESS)?;
 
