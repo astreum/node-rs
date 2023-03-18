@@ -1,10 +1,14 @@
-use std::{error::Error, collections::BTreeMap, sync::{Arc, Mutex}};
-
+use crate::block::Block;
+use crate::chain::Chain;
+use crate::transaction::Transaction;
+use crate::relay::Relay;
+use crate::state::State;
 use neutrondb::Store;
 use opis::Integer;
-
-use crate::{block::Block, chain::Chain, relay::Relay, state::State};
-
+use std::error::Error;
+use std::collections::BTreeMap;
+use std::sync::Arc;
+use std::sync::Mutex;
 use super::App;
 
 impl App {
@@ -16,6 +20,12 @@ impl App {
                 Store::new(
                     &format!("./data/{:?}_blocks", &chain)
                 )?
+            )
+        );
+
+        let pending_transactions: Arc<Mutex<BTreeMap<[u8; 32], Transaction>>> = Arc::new(
+            Mutex::new(
+                BTreeMap::new()
             )
         );
         
@@ -36,11 +46,7 @@ impl App {
 
         let app = App {
             blocks_store,
-            pending_transactions: Arc::new(
-                Mutex::new(
-                    BTreeMap::new()
-                )
-            ),
+            pending_transactions,
             relay,
             state,
         };

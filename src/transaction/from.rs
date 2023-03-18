@@ -19,7 +19,8 @@ impl TryFrom<&[u8]> for Transaction {
                 recipient: tx_decoded[3].try_into()?,
                 sender: tx_decoded[4].try_into()?,
                 signature: tx_decoded[5].try_into()?,
-                value: tx_decoded[6].try_into()?,
+                transaction_hash: tx_decoded[6].try_into()?,
+                value: tx_decoded[7].try_into()?,
                 details_hash: [0; 32],
             };
 

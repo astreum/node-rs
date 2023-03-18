@@ -15,5 +15,6 @@ pub struct Transaction {
     pub recipient: Address,
     pub sender: Address,
     pub signature: [u8; 64],
+    pub transaction_hash: [u8; 32],
     pub value: Integer,
 }

@@ -118,6 +118,15 @@ impl State {
             )
         );
 
+        let transactions_hash = merkle_tree::root(
+            blake_3,
+            &(transactions
+                .iter()
+                .map(|x| x.transaction_hash.as_slice())
+                .collect::<Vec<_>>()
+            )
+        );
+
         // calculate transactions hash
 
         let mut new_block = Block {
@@ -133,7 +142,7 @@ impl State {
             validator: *public_key,
             data: "Astreum Foundation Node v0.0.1 by Stelar Labs".as_bytes().into(),
             delay_output: delay_output.join().unwrap_or(Err("VDF error!")?).unwrap_or(Err("VDF error!")?),
-            transactions_hash: [0; 32],
+            transactions_hash,
             block_hash: [0; 32],
             details_hash: [0; 32],
             delay_difficulty,

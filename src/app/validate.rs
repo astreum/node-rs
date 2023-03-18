@@ -3,7 +3,9 @@ use std::sync::Arc;
 use std::thread;
 use std::time::{Instant, SystemTime, Duration};
 use crate::address::Address;
-use crate::relay::{Message, Topic};
+use crate::relay::message::Message;
+use crate::relay::topic::Topic;
+
 use super::App;
 
 

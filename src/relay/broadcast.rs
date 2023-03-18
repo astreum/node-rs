@@ -2,7 +2,7 @@ use std::{sync::Arc, error::Error, net::SocketAddr};
 
 use fides::encrypt;
 
-use super::{Relay, Message, Envelope};
+use super::{Relay, Message, envelope::Envelope};
 
 impl Relay {
 
@@ -26,7 +26,7 @@ impl Relay {
 
                         for (_,bucket) in consensus_route.0.iter() {
 
-                            for address in bucket.iter() {
+                            for address in bucket.0.iter() {
 
                                 match peers.get(&address) {
 
@@ -41,7 +41,7 @@ impl Relay {
                                             ]
                                         );
 
-                                        let envelope = Envelope::new(encoded_encrypted_message, false);
+                                        let envelope = Envelope::new(true, encoded_encrypted_message);
 
                                         validator_messages.push((
                                             (&envelope).into(),

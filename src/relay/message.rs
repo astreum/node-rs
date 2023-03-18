@@ -1,12 +1,20 @@
-use std::error::Error;
+use super::topic::Topic;
 
-use crate::relay::Message;
-use crate::relay::Topic;
+#[derive(Clone, Debug)]
+pub struct Message {
+    pub body: Vec<u8>,
+    pub topic: Topic
+}
 
 impl Message {
 
     pub fn new(body: &[u8], topic: &Topic) -> Message {
-        Message { body: body.to_vec(), topic: topic.clone() }
+
+        Message {
+            body: body.to_vec(),
+            topic: topic.clone()
+        }
+
     }
 
 }
@@ -24,9 +32,10 @@ impl Into<Vec<u8>> for &Message {
 }
 
 impl TryFrom<&[u8]> for Message {
-    type Error = Box<dyn Error>;
 
-    fn try_from(value: &[u8]) -> Result<Self, Box<dyn Error>> {
+    type Error = Box<dyn std::error::Error>;
+
+    fn try_from(value: &[u8]) -> Result<Self, Box<dyn std::error::Error>> {
 
         let decoded_message = astro_format::decode(value)?;
 

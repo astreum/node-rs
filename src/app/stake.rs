@@ -4,7 +4,7 @@ use neutrondb::Store;
 use opis::Integer;
 use rand::Rng;
 
-use crate::{chain::Chain, address::Address, account::Account, CONSENSUS_ADDRESS, transaction::Transaction, relay::{Message, Topic, Relay}};
+use crate::{chain::Chain, address::Address, account::Account, CONSENSUS_ADDRESS, transaction::Transaction, relay::{Relay, topic::Topic, message::Message}};
 
 
 pub fn run(args: &[String]) -> Result<(), Box<dyn Error>> {
@@ -47,6 +47,7 @@ pub fn run(args: &[String]) -> Result<(), Box<dyn Error>> {
                         data: vec![],
                         details_hash: [0; 32],
                         signature: [0; 64],
+                        transaction_hash: [0; 32],
                     };
 
                     tx.update_details_hash();
@@ -112,6 +113,7 @@ pub fn run(args: &[String]) -> Result<(), Box<dyn Error>> {
                         value,
                         details_hash: [0; 32],
                         signature: [0; 64],
+                        transaction_hash: [0; 32],
                     };
 
                     tx.update_details_hash();

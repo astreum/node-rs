@@ -1,24 +1,27 @@
 use std::fs::File;
 use std::io::BufRead;
 use std::io::BufReader;
+use std::net::IpAddr;
 use std::net::SocketAddr;
 use std::net::UdpSocket;
 use std::error::Error;
 use std::sync::Arc;
 use std::sync::Mutex;
 use std::collections::HashMap;
+use std::sync::mpsc::Receiver;
+use std::sync::mpsc::Sender;
+use std::sync::mpsc::channel;
 use crate::relay::Relay;
 use fides::x25519;
 use rand::Rng;
-use super::Route;
-use super::{Envelope, Ping};
+use super::envelope::Envelope;
+use super::message::Message;
+use super::ping::Ping;
+use super::route::Route;
 
 impl Relay {
     
-    pub fn new(
-        incoming_port: &u16,
-        validator: &bool
-    ) -> Result<Relay, Box<dyn Error>> {
+    pub fn new(incoming_port: &u16, validator: &bool) -> Result<Relay, Box<dyn Error>> {
 
         let seeders_file = File::open("./seeders.txt")?;
 
@@ -62,7 +65,10 @@ impl Relay {
             validator: validator.clone(),
         };
 
-        let seeding_envelope = Envelope::new((&seeding_ping).into(), true);
+        let seeding_envelope = Envelope::new(
+            false,
+            (&seeding_ping).into()
+        );
         
         for seeder in &seeders {
 
@@ -70,7 +76,9 @@ impl Relay {
 
         }
 
-        Ok(Relay {
+        let (sender, receiver): (Sender<(Message, IpAddr)>, Receiver<(Message, IpAddr)>) = channel();        
+
+        let relay = Relay {
             incoming_port: incoming_port.clone(),
             incoming_queue: Arc::new(Mutex::new(Vec::new())),
             incoming_socket: Arc::new(Mutex::new(incoming_socket)),
@@ -82,8 +90,20 @@ impl Relay {
             consensus_route: Arc::new(Mutex::new(Route::new())),
             seeders,
             validator: validator.clone(),
-            peer_route: Arc::new(Mutex::new(Route::new()))
-        })
+            peer_route: Arc::new(Mutex::new(Route::new())),
+            receiver: Arc::new(Mutex::new(receiver)),
+        };
+
+        relay.incoming();
+
+        relay.decoding(sender);
+
+        relay.outgoing();
+
+        relay.liveness();
+
+        Ok(relay)
+
     }
 
 }

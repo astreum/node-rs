@@ -2,7 +2,7 @@ use std::{error::Error, sync::Arc, thread, time::{Instant, SystemTime, Duration}
 
 use opis::Integer;
 
-use crate::relay::{Message, Topic};
+use crate::relay::{message::Message, topic::Topic};
 
 use super::App;
 
@@ -36,27 +36,44 @@ impl App {
 
                             if current_time > (state.latest_block.time + 3) {
 
+                                println!("currently at block #{:?}, updating ...", &state.latest_block.number);
+
                                 let next_block_number = &state.latest_block.number + &Integer::one();
 
                                 let next_block_number_bytes: Vec<u8> = next_block_number.into();
 
-                                let next_block_message = Message::new(&next_block_number_bytes, &Topic::BlockRequest);
+                                let next_block_message = Message::new(
+                                    &next_block_number_bytes,
+                                    &Topic::BlockRequest
+                                );
 
                                 match relay_clone.lock() {
                 
                                     Ok(relay) => {
 
-                                        match relay.random_validator() {
+                                        let consensus_route_clone = relay.consensus_route.clone();
 
-                                            Ok(random_validator) => {
+                                        match consensus_route_clone.lock() {
 
-                                                let _ = relay.send(&random_validator, &next_block_message);
+                                            Ok(consensus_route) => {
+
+                                                match consensus_route.sample() {
+
+                                                    Some(sample) => {
+
+                                                        let _ = relay.send(&sample, &next_block_message);
+
+                                                    },
+
+                                                    None => (),
+                                                
+                                                }
                                             
                                             },
 
-                                            Err(_) => (),
+                                            Err(_) => todo!(),
 
-                                        }
+                                        };
                     
                                     },
                     

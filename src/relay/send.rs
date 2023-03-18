@@ -2,7 +2,7 @@ use std::{net::{SocketAddr, IpAddr}, sync::Arc, error::Error};
 
 use fides::encrypt;
 
-use super::{Relay, Message, Envelope};
+use super::{Relay, Message, envelope::Envelope};
 
 impl Relay {
 
@@ -33,7 +33,7 @@ impl Relay {
                             ]
                         );
 
-                        let envelope = Envelope::new(encoded_encrypted_message, false);
+                        let envelope = Envelope::new(true, encoded_encrypted_message);
 
                         match outgoing_queue_clone.lock() {
 

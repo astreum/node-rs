@@ -3,17 +3,23 @@ use std::{time::SystemTime, error::Error};
 use fides::{hash::blake_3, merkle_tree::root};
 use opis::Integer;
 
-use super::Envelope;
+#[derive(Clone, Debug)]
+pub struct Envelope {
+    pub encrypted: bool,
+    pub message: Vec<u8>,
+    nonce: u64,
+    time: u64
+}
 
 impl Envelope {
     
-    pub fn new(message: Vec<u8>, ping: bool) -> Envelope {
+    pub fn new(encrypted: bool, message: Vec<u8>) -> Envelope {
 
         let time = SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs();
         
         let time_bytes: Vec<u8> = Integer::from(&time).into();
 
-        let ping_byte = if ping { vec![1] } else { vec![0] };
+        let encrypted_byte = if encrypted { vec![1] } else { vec![0] };
 
         let mut nonce = 0_u64;
 
@@ -22,7 +28,7 @@ impl Envelope {
             &[
                 &message,
                 &nonce.to_be_bytes(),
-                &ping_byte,
+                &encrypted_byte,
                 &time_bytes
             ]
         );
@@ -36,7 +42,7 @@ impl Envelope {
                 &[
                     &message,
                     &nonce.to_be_bytes(),
-                    &ping_byte,
+                    &encrypted_byte,
                     &time_bytes
                 ]
             );
@@ -44,9 +50,9 @@ impl Envelope {
         }
 
         Envelope {
+            encrypted,
             message,
             nonce,
-            ping,
             time
         }
 
@@ -55,20 +61,26 @@ impl Envelope {
 }
 
 impl Into<Vec<u8>> for &Envelope {
+
     fn into(self) -> Vec<u8> {
+
         astro_format::encode(&[
+            if self.encrypted { &[1_u8] } else { &[0_u8] },
             &self.message,
             &self.nonce.to_be_bytes()[..],
-            if self.ping { &[1_u8] } else { &[0_u8] },
-            &self.time.to_be_bytes()[..]
+            &self.time.to_be_bytes()[..],
         ])
+
     }
+
 }
 
 impl TryFrom<&[u8]> for Envelope {
+
     type Error = Box<dyn Error>;
 
     fn try_from(value: &[u8]) -> Result<Self, Box<dyn Error>> {
+
         let envelope_fields = astro_format::decode(value)?;
 
         if envelope_fields.len() == 4 {
@@ -76,10 +88,10 @@ impl TryFrom<&[u8]> for Envelope {
             // verify difficulty and time
             
             let result = Envelope {
-                message: envelope_fields[0].to_vec(),
-                nonce: u64::from_be_bytes(envelope_fields[1].try_into()?),
-                ping: if envelope_fields[2] == [1] { true } else { false },
-                time: u64::from_be_bytes(envelope_fields[3].try_into()?)
+                encrypted: if envelope_fields[0] == [1] { true } else { false },
+                message: envelope_fields[1].to_vec(),
+                nonce: u64::from_be_bytes(envelope_fields[2].try_into()?),
+                time: u64::from_be_bytes(envelope_fields[3].try_into()?),
             };
 
             Ok(result)

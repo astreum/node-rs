@@ -10,6 +10,7 @@ use crate::account::Account;
 use crate::block::Block;
 use crate::address::Address;
 
+#[derive(Debug)]
 pub struct State {
     pub accounts: BTreeMap<Address, [u8;32]>,
     pub accounts_store: Store<Address, Account>,

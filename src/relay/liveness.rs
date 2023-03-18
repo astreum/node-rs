@@ -1,5 +1,5 @@
 use std::{thread, time::{Instant, SystemTime}, sync::Arc, net::SocketAddr};
-use super::{Relay, Ping, Envelope};
+use super::{Relay, ping::Ping, envelope::Envelope};
 
 impl Relay {
 
@@ -29,7 +29,7 @@ impl Relay {
 
                 if now.elapsed().as_secs() > 30 {
 
-                    let liveness_envelope = Envelope::new((&liveness_ping).into(), true);
+                    let liveness_envelope = Envelope::new(false, (&liveness_ping).into());
 
                     match peers_clone.lock() {
                         
@@ -74,7 +74,7 @@ impl Relay {
 
                                                     Ok(mut consensus_route) => {
 
-                                                        consensus_route.remove_peer(peer_address)
+                                                        consensus_route.remove(peer_address)
 
                                                     },
 
@@ -86,7 +86,7 @@ impl Relay {
 
                                                     Ok(mut peer_route) => {
 
-                                                        peer_route.remove_peer(peer_address)
+                                                        peer_route.remove(peer_address)
 
                                                     },
 
