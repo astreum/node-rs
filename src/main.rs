@@ -1,31 +1,28 @@
+use crate::address::Address;
 use fides::ed25519;
-// use neutrondb::Store;
-// use opis::Integer;
-// use rand::Rng;
-// use crate::account::Account;
-// use crate::address::Address;
-// use crate::app::App;
-// use crate::chain::Chain;
-// use crate::relay::Relay;
-// use crate::relay::message::Message;
-// use crate::relay::topic::Topic;
-// use crate::transaction::Transaction;
+use crate::chain::Chain;
 use std::env;
 use std::error::Error;
 use std::path::Path;
 use std::fs;
-// mod account;
+mod app;
+mod chain;
+mod envelope;
+mod peer;
+mod block;
+mod bucket;
+mod message;
+mod ping;
+mod receipt;
+mod route;
+mod topic;
 mod address;
-// mod app;
-// mod block;
-// mod chain;
-// mod transaction;
-// mod receipt;
-// mod relay;
-// mod state;
+mod account;
+mod transaction;
+mod object;
 
-// const CONSENSUS_ADDRESS: Address = Address([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 99, 111, 110, 115, 101, 110, 115, 117, 115]);
-// const STELAR_ADDRESS: Address = Address([0, 1, 2, 3, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 99, 111, 110, 115, 101, 110, 115, 117, 115]);
+const CONSENSUS_ADDRESS: Address = Address([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 99, 111, 110, 115, 101, 110, 115, 117, 115]);
+const STELAR_ADDRESS: Address = Address([0, 1, 2, 3, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 99, 111, 110, 115, 101, 110, 115, 117, 115]);
 
 fn main() -> Result<(), Box<dyn Error>> {
 
@@ -246,31 +243,38 @@ Astreum Foundation 12023 HE.
 
             // },
             
-            // "sync" => {
+            "sync" => {
 
-            //     println!("syncing ...");
+                println!("syncing ...");
 
-            //     if args.len() == 3 {
+                if args.len() == 3 {
 
-            //         let chain = Chain::try_from(&args[2][..])?;
+                    let chain = Chain::try_from(&args[2][..])?;
 
-            //         let app = App::new(&chain, &55555, &false)?;
+                    // let app = App::new(
+                    //     Address([0;32]),
+                    //     [0;32],
+                    //     chain,
+                    //     55555,
+                    //     false
+                    // )?;
+                    let account_address: Address = Address([0;32]);
+                    
+                    let account_key: [u8;32] = [0;32];
+                    
+                    let validator = false;
 
-            //         app.listen()?;
+                    let incoming_port = 55555;
+                    
+                    app::run(account_address, account_key, chain, incoming_port, validator)?;
 
-            //         app.update()?;
+                } else {
 
-            //         loop {}
+                    println!("usage is 'sync [chain]'!")
 
-            //     } else {
+                };
 
-            //         println!("usage is 'sync [chain]'!")
-
-            //     };
-
-            //     Ok(())
-
-            // },
+            },
 
             _ =>  help()
 

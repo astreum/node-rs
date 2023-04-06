@@ -1,4 +1,4 @@
-use fides::{merkle_tree::root, hash::blake_3};
+use fides::{merkle_tree, hash::blake_3};
 use opis::Integer;
 
 #[derive(Clone, Debug)]
@@ -9,27 +9,23 @@ pub struct Receipt {
 
 impl Receipt {
 
-    pub fn receipt_hash(&self) -> [u8; 32] {
+    pub fn hash(&self) -> [u8; 32] {
 
         let solar_used_bytes: Vec<u8> = Integer::from(&self.solar_used).into();
 
         let status_bytes: Vec<u8> = (&self.status).into();
         
-        root(
-            blake_3,
-            &[
-                &solar_used_bytes,
-                &status_bytes
-            ]
-        )
+        merkle_tree::root(blake_3, &[&solar_used_bytes, &status_bytes])
         
     }
 
     pub fn new() -> Self {
+
         Receipt {
             solar_used: 0,
             status: Status::BalanceError
         }
+
     }
 }
 
@@ -48,14 +44,6 @@ impl Into<Vec<u8>> for &Status {
             Status::BalanceError => vec![2_u8],
             Status::SolarError => vec![3_u8]
         }
-    }
-
-}
-
-impl Into<Vec<u8>> for Status {
-
-    fn into(self) -> Vec<u8> {
-        (&self).into()
     }
 
 }

@@ -1,8 +1,8 @@
 use std::{collections::HashMap, net::IpAddr, error::Error};
 
-use super::bucket::Bucket;
+// use rand::Rng;
 
-use rand::Rng;
+use super::bucket::Bucket;
 
 
 #[derive(Clone, Debug)]
@@ -122,24 +122,41 @@ impl Route {
 
     }
 
-    pub fn sample(&self) -> Option<IpAddr> {
+}
 
-        let samples = self.samples();
+pub enum RouteID {
+    Peer,
+    Consensus
+}
+impl TryFrom<&[u8]> for RouteID {
 
-        if samples.is_empty() {
+    type Error = Box<dyn Error>;
 
-            None
+    fn try_from(value: &[u8]) -> Result<Self, Box<dyn Error>> {
 
-        } else {
+        match value {
 
-            let mut rng = rand::thread_rng();
+            [0] => Ok(RouteID::Peer),
 
-            let i = rng.gen_range(0..samples.len());
+            [1] => Ok(RouteID::Consensus),
 
-            Some(samples[i])
+            _ => Err("Unknown chain option!")?
 
         }
 
     }
 
+}
+
+impl Into<Vec<u8>> for &RouteID {
+
+    fn into(self) -> Vec<u8> {
+
+        match self {
+            RouteID::Peer => vec![0],
+            RouteID::Consensus => vec![1]
+        }
+
+    }
+    
 }

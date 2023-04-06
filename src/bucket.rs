@@ -21,15 +21,15 @@ impl Bucket {
 
     pub fn remove(&mut self, ip_address: &IpAddr) {
 
-        self.0.iter().filter(|&x| x != ip_address);
+        self.0.retain(|x| x != ip_address);
 
     }
 
-    pub fn membership(&self, ip_address: &IpAddr) -> bool {
+    // pub fn membership(&self, ip_address: &IpAddr) -> bool {
 
-        self.0.contains(ip_address)
+    //     self.0.contains(ip_address)
 
-    }
+    // }
 
     pub fn size(&self) -> usize {
 

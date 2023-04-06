@@ -1,7 +1,10 @@
 use std::{error::Error, fmt};
 
 #[derive(Clone)]
-pub enum Chain { Main, Test }
+pub enum Chain {
+    Main,
+    Test
+}
 
 impl fmt::Debug for Chain {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -23,13 +26,6 @@ impl TryFrom<&str> for Chain {
     }
 }
 
-impl TryFrom<String> for Chain {
-    type Error = Box<dyn Error>;
-    fn try_from(value: String) -> Result<Self, Self::Error> {
-        Chain::try_from(&value[..])
-    }
-}
-
 impl TryFrom<&[u8]> for Chain {
     type Error = Box<dyn Error>;
     fn try_from(value: &[u8]) -> Result<Self, Box<dyn Error>> {
@@ -47,11 +43,5 @@ impl Into<Vec<u8>> for &Chain {
             Chain::Main => vec![1],
             Chain::Test => vec![0]
         }
-    }
-}
-
-impl Into<Vec<u8>> for Chain {
-    fn into(self) -> Vec<u8> {
-        (&self).into()
     }
 }
